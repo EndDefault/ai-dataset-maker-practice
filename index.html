@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Maker Studio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">AI</span>
+          <div>
+            <h1>Maker Studio</h1>
+            <p>프로필, 기억, 데이터셋 연습</p>
+          </div>
+        </div>
+
+        <button id="newProfileButton" class="primary-button" type="button">새 AI 만들기</button>
+
+        <div class="panel-title">AI 목록</div>
+        <div id="profileList" class="profile-list"></div>
+      </aside>
+
+      <main class="chat-area">
+        <header class="chat-header">
+          <div>
+            <p class="eyebrow">현재 대화</p>
+            <h2 id="activeProfileName">AI를 선택하세요</h2>
+          </div>
+          <div id="profileSummary" class="profile-summary"></div>
+        </header>
+
+        <section id="messageList" class="message-list" aria-live="polite"></section>
+
+        <form id="chatForm" class="chat-form">
+          <input
+            id="chatInput"
+            type="text"
+            autocomplete="off"
+            placeholder="대화를 입력하세요"
+            aria-label="대화 입력"
+          />
+          <button type="submit">보내기</button>
+        </form>
+      </main>
+
+      <aside class="inspector">
+        <div class="tabs" role="tablist" aria-label="설정 탭">
+          <button class="tab active" data-tab="settings" type="button">설정</button>
+          <button class="tab" data-tab="memories" type="button">기억</button>
+          <button class="tab" data-tab="maker" type="button">제작</button>
+          <button class="tab" data-tab="data" type="button">데이터</button>
+        </div>
+
+        <section id="settingsTab" class="tab-panel active">
+          <form id="profileForm" class="stack">
+            <div class="connection-box">
+              <div class="panel-title">AI 연결</div>
+              <label>
+                AI 제공자
+                <select id="providerInput">
+                  <option value="ollama">Ollama 로컬</option>
+                  <option value="practice">연습용 가짜 답변</option>
+                  <option value="openai">OpenAI API</option>
+                </select>
+              </label>
+              <label>
+                모델 이름
+                <input id="modelInput" type="text" placeholder="예: qwen2.5:7b" />
+              </label>
+              <p class="connection-note">
+                Ollama는 API 키 없이 내 컴퓨터의 http://localhost:11434 서버에 연결합니다.
+              </p>
+            </div>
+            <label>
+              AI 이름
+              <input id="profileNameInput" type="text" required />
+            </label>
+            <label>
+              역할
+              <input id="roleInput" type="text" placeholder="예: 공부 도우미, 번역가" />
+            </label>
+            <label>
+              말투
+              <select id="toneInput">
+                <option value="차분한 존댓말">차분한 존댓말</option>
+                <option value="친근한 반말">친근한 반말</option>
+                <option value="장난스럽지만 정확한 말투">장난스럽지만 정확한 말투</option>
+                <option value="짧고 단호한 말투">짧고 단호한 말투</option>
+              </select>
+            </label>
+            <label>
+              성격
+              <textarea id="personalityInput" rows="3"></textarea>
+            </label>
+            <label>
+              금지사항
+              <textarea id="rulesInput" rows="3"></textarea>
+            </label>
+            <label>
+              답변 스타일
+              <textarea id="styleInput" rows="3"></textarea>
+            </label>
+            <button type="submit" class="primary-button">설정 저장</button>
+          </form>
+
+          <div class="prompt-preview">
+            <div class="panel-title">실제로 AI에게 보낼 시스템 프롬프트</div>
+            <pre id="promptPreview"></pre>
+          </div>
+        </section>
+
+        <section id="memoriesTab" class="tab-panel">
+          <form id="memoryForm" class="inline-form">
+            <input id="memoryInput" type="text" placeholder="예: 나는 짧은 예시를 좋아한다" />
+            <button type="submit">추가</button>
+          </form>
+          <div id="memoryList" class="memory-list"></div>
+        </section>
+
+        <section id="makerTab" class="tab-panel">
+          <form id="makerForm" class="stack">
+            <label>
+              질문
+              <textarea id="makerQuestionInput" rows="3" placeholder="예: 좋은 답변 데이터가 왜 필요해?"></textarea>
+            </label>
+            <label>
+              핵심 사실
+              <textarea id="makerFactsInput" rows="6" placeholder="- AI는 대화 중 자동으로 학습하지 않는다.&#10;- 좋은 답변 데이터는 나중에 학습 재료로 쓴다."></textarea>
+            </label>
+            <label>
+              원하는 말투/형식
+              <textarea id="makerStyleInput" rows="3" placeholder="예: 친근한 반말, 3문장 이내, 없는 내용 추가 금지"></textarea>
+            </label>
+            <button id="makerDraftButton" type="submit" class="primary-button">초안 만들기</button>
+          </form>
+
+          <div class="maker-result">
+            <div class="panel-title">최종 답변</div>
+            <textarea id="makerAnswerInput" rows="9" placeholder="초안을 만든 뒤 여기서 직접 고쳐서 저장하세요."></textarea>
+            <div class="data-actions">
+              <button id="makerSaveButton" type="button">학습 데이터로 저장</button>
+              <button id="makerClearButton" class="ghost-button" type="button">입력 비우기</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="dataTab" class="tab-panel">
+          <div class="data-actions">
+            <button id="exportButton" type="button">JSONL Export</button>
+            <button id="clearDatasetButton" class="ghost-button" type="button">데이터 비우기</button>
+            <button id="resetAppButton" class="danger-button" type="button">전체 초기화</button>
+          </div>
+          <div id="datasetList" class="dataset-list"></div>
+        </section>
+      </aside>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
