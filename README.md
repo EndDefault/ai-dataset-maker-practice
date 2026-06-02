@@ -19,19 +19,19 @@ Ollama는 API 키가 아니라 내 컴퓨터의 로컬 서버에 연결합니다
 
 1. 모델을 설치합니다.
 
-```powershell
+```cmd
 ollama pull qwen2.5:7b
 ```
 
 컴퓨터가 부담스러우면 더 작은 모델을 써도 됩니다.
 
-```powershell
+```cmd
 ollama pull qwen2.5:3b
 ```
 
 2. Ollama 서버가 실행 중인지 확인합니다.
 
-```powershell
+```cmd
 ollama serve
 ```
 
@@ -39,13 +39,13 @@ Ollama 앱이 이미 켜져 있으면 이 명령은 따로 필요 없을 수 있
 
 3. 이 앱의 서버를 실행합니다.
 
-```powershell
+```cmd
 npm start
 ```
 
 또는:
 
-```powershell
+```cmd
 node server.js
 ```
 
@@ -65,10 +65,10 @@ http://localhost:5173
 - `연습용 가짜 답변`: 모델 없이 화면과 데이터 저장 흐름만 테스트합니다.
 - `OpenAI API`: 유료 API입니다. 이 모드를 쓰려면 `OPENAI_API_KEY`가 필요합니다.
 
-OpenAI를 쓸 때만 PowerShell에서 키를 설정합니다.
+OpenAI를 쓸 때만 Command Prompt에서 키를 설정합니다.
 
-```powershell
-$env:OPENAI_API_KEY="여기에_API_키"
+```cmd
+set OPENAI_API_KEY=여기에_API_키
 npm start
 ```
 

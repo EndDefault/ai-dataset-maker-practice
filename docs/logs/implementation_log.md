@@ -107,3 +107,16 @@
 - 앱 진입점은 `src/index.js` 하나로 둔다.
 - 기능 도메인 로직은 `src/features/*`에 둔다.
 - 화면 렌더링은 아직 `src/index.js`에 남겨두고, 다음 리팩터링에서 `src/ui`로 점진 분리한다.
+
+## 2026-06-02 실행 문서 Command Prompt 기준 정리
+
+변경 요약:
+
+- README 실행 예시를 `cmd` 코드블록으로 변경
+- OpenAI API 키 설정 예시를 Command Prompt의 `set` 문법으로 변경
+- 테스트 계획의 실행 명령도 Command Prompt 기준으로 변경
+
+설계 결정:
+
+- 사용자가 직접 실행하는 기준 터미널은 Command Prompt로 둔다.
+- 셸 실행 정책 차이로 헷갈리지 않도록 문서에서는 `npm start`를 cmd 기준으로 안내한다.

@@ -10,7 +10,7 @@
 
 실행 명령:
 
-```powershell
+```cmd
 npm start
 ```
 
