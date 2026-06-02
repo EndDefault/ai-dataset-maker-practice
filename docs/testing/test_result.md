@@ -256,3 +256,23 @@
 
 - `node --check src\core\promptBuilder.js` 통과
 - `node --check src\features\chat\chat.js` 통과
+
+## 2026-06-02 큐레이션 데이터 50개 생성
+
+테스트 범위:
+
+- 큐레이션 데이터 생성 스크립트 문법 확인
+- 생성 예시 개수 50개 확인
+- `data/app-state.json` 생성 결과 확인
+- assistant 답변의 냥체 끝맺음 확인
+- 프로필 대화 기록 초기화 확인
+
+실행 결과:
+
+- `node --check scripts\create-curated-state.js` 통과
+- `rg -c "question:" scripts\create-curated-state.js` 결과 50
+- `node scripts\create-curated-state.js` 실행 성공
+- 생성된 dataset 50개 확인
+- 생성된 dataset source가 모두 `curated`임을 확인
+- profile messages 0개 확인
+- assistant 답변 끝맺음 검사에서 문제 0개 확인
