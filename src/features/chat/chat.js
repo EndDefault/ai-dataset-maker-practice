@@ -21,7 +21,8 @@ export async function answerWithSelectedProvider(profile, userInput, settings, d
   const systemPrompt = buildSystemPrompt(profile, relatedMemories, goodExamples);
   const recentMessages = profile.messages
     .filter((message) => !message.isError)
-    .slice(-6)
+    .filter((message) => message.role === "user")
+    .slice(-4)
     .map((message) => ({
       role: message.role,
       content: message.content,

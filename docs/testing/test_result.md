@@ -213,3 +213,22 @@
 - 프로필 1개, dataset 15개 확인
 - 첫 번째 dataset의 system 메시지에 `원하는 말투와 형식` 포함 확인
 - `git check-ignore -v data\app-state.json`으로 Git 제외 확인
+
+## 2026-06-02 냥체 프롬프트 오염 방지
+
+테스트 범위:
+
+- AI 요청의 최근 대화 메시지 필터 변경
+- 시스템 프롬프트 냥체 규칙 강화
+- 말투 선택 옵션 추가
+
+실행 결과:
+
+- `node --check src\features\chat\chat.js` 통과
+- `node --check src\core\promptBuilder.js` 통과
+- `node --check src\index.js` 통과
+- `node --check scripts\create-seed-state.js` 통과
+
+비고:
+
+- 현재 `data/app-state.json`의 실패 대화 기록은 비우고, `나비` 프로필 말투를 `자연스러운 냥체`로 맞췄다.
