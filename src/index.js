@@ -16,12 +16,7 @@ const modelDefaults = {
   openai: "gpt-4.1-mini",
 };
 
-let state = normalizeState(loadState() ?? {
-  profiles: [fallbackProfile],
-  activeProfileId: fallbackProfile.id,
-  dataset: [],
-  failures: [],
-});
+let state = normalizeState((await loadState()) ?? createDefaultState());
 
 const elements = {
   newProfileButton: document.querySelector("#newProfileButton"),
@@ -71,6 +66,15 @@ function normalizeState(nextState) {
   };
 }
 
+function createDefaultState() {
+  return {
+    profiles: [fallbackProfile],
+    activeProfileId: fallbackProfile.id,
+    dataset: [],
+    failures: [],
+  };
+}
+
 function getActiveProfile() {
   return state.profiles.find((profile) => profile.id === state.activeProfileId) ?? state.profiles[0];
 }
@@ -93,7 +97,7 @@ function readSettingsFromForm() {
 }
 
 function persistAndRender() {
-  saveState(state);
+  void saveState(state);
   render();
 }
 
@@ -424,7 +428,7 @@ elements.providerInput.addEventListener("change", () => {
     ...state,
     settings: readSettingsFromForm(),
   };
-  saveState(state);
+  void saveState(state);
 });
 
 elements.chatForm.addEventListener("submit", async (event) => {
@@ -443,7 +447,7 @@ elements.chatForm.addEventListener("submit", async (event) => {
     ...state,
     settings: readSettingsFromForm(),
   };
-  saveState(state);
+  void saveState(state);
 
   const nextTurn = await appendChatTurn(getActiveProfile(), input, state.settings, state.dataset);
 
@@ -474,7 +478,7 @@ elements.makerForm.addEventListener("submit", async (event) => {
     ...state,
     settings: readSettingsFromForm(),
   };
-  saveState(state);
+  void saveState(state);
 
   elements.makerDraftButton.disabled = true;
   elements.makerDraftButton.textContent = "초안 만드는 중...";
@@ -530,9 +534,9 @@ elements.clearDatasetButton.addEventListener("click", () => {
   }
 });
 
-elements.resetAppButton.addEventListener("click", () => {
+elements.resetAppButton.addEventListener("click", async () => {
   if (confirm("앱에 저장된 프로필, 기억, 대화, 데이터셋을 모두 초기화할까요?")) {
-    clearState();
+    await clearState();
     window.location.reload();
   }
 });

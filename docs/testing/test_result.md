@@ -30,7 +30,7 @@
 
 - 데이터셋 검수 기능 구현 후 수동 테스트
 - JSONL export 포맷 확인
-- 브라우저 localStorage 유지 확인
+- 파일 기반 상태 저장 유지 확인
 
 ## 2026-06-02 커밋 규칙 문서 추가
 
@@ -162,3 +162,21 @@
 비고:
 
 - 기존에 저장된 데이터는 자동으로 바뀌지 않으므로 다시 저장하거나 별도 마이그레이션이 필요하다.
+
+## 2026-06-02 파일 기반 상태 저장 추가
+
+테스트 범위:
+
+- `/api/state` GET/PUT/DELETE 추가
+- 브라우저 storage 모듈을 서버 API 기반으로 변경
+- 앱 초기 로딩을 비동기 상태 로딩으로 변경
+
+실행 결과:
+
+- `node --check server.js` 통과
+- `node --check src\index.js` 통과
+- `node --check src\core\storage.js` 통과
+- `GET /api/state`가 파일 없음 상태에서 `null` 응답
+- `PUT /api/state`로 `data/app-state.json` 생성 확인
+- `GET /api/state`로 저장 상태 재조회 확인
+- `DELETE /api/state`로 테스트 상태 삭제 확인

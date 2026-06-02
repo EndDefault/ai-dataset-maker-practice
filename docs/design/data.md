@@ -2,13 +2,15 @@
 
 ## 저장 위치
 
-현재 앱 상태는 브라우저 `localStorage`에 저장한다.
+현재 앱 상태는 서버가 관리하는 JSON 파일에 저장한다.
 
 ```txt
-ai-maker-studio-state
+data/app-state.json
 ```
 
-앱은 `src/core/storage.js`에서 상태를 읽고 저장한다.
+브라우저는 `src/core/storage.js`를 통해 `/api/state`를 호출하고, 서버는 `server.js`에서 JSON 파일을 읽고 쓴다.
+
+`data/app-state.json`은 개인 작업 데이터라 Git에는 올리지 않는다.
 
 ## 전체 상태 구조
 

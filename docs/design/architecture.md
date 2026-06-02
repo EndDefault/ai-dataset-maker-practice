@@ -7,7 +7,8 @@
 ```txt
 Browser UI
 → src JavaScript
-→ localStorage
+→ /api/state
+→ data/app-state.json
 → JSONL export
 
 Browser UI
@@ -40,7 +41,7 @@ Browser UI
 
 - `src/index.js`: 화면 렌더링과 이벤트 연결
 - `src/core/promptBuilder.js`: 시스템 프롬프트 생성
-- `src/core/storage.js`: localStorage 저장과 파일 다운로드
+- `src/core/storage.js`: `/api/state` 저장 요청과 파일 다운로드
 - `src/features/profiles/profiles.js`: AI 프로필 생성과 수정
 - `src/features/memories/memories.js`: 기억 추가, 삭제, 관련 기억 검색
 - `src/features/chat/chat.js`: AI 답변 요청 흐름
@@ -70,7 +71,13 @@ Browser UI
 
 ### Storage
 
-현재 저장소는 브라우저 `localStorage`다.
+현재 저장소는 프로젝트 폴더의 JSON 파일이다.
+
+```txt
+data/app-state.json
+```
+
+브라우저는 `/api/state`를 통해 상태를 불러오고 저장한다.
 
 저장 대상:
 

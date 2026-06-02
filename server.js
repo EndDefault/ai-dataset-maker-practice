@@ -8,6 +8,8 @@ const DEFAULT_OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 const PUBLIC_DIR = __dirname;
+const DATA_DIR = path.join(__dirname, "data");
+const STATE_FILE = path.join(DATA_DIR, "app-state.json");
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -19,6 +21,11 @@ const contentTypes = {
 
 const server = http.createServer(async (request, response) => {
   try {
+    if (request.url === "/api/state") {
+      await handleState(request, response);
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/chat") {
       await handleChat(request, response);
       return;
@@ -69,6 +76,56 @@ async function handleChat(request, response) {
   }
 
   sendJson(response, 400, { error: `Unknown provider: ${provider}` });
+}
+
+async function handleState(request, response) {
+  if (request.method === "GET") {
+    sendJson(response, 200, await readSavedState());
+    return;
+  }
+
+  if (request.method === "PUT") {
+    const body = await readJsonBody(request);
+    await writeSavedState(body);
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
+  if (request.method === "DELETE") {
+    await deleteSavedState();
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
+  sendJson(response, 405, { error: "Method not allowed" });
+}
+
+async function readSavedState() {
+  try {
+    const stateText = await fs.readFile(STATE_FILE, "utf8");
+    return JSON.parse(stateText);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function writeSavedState(state) {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.writeFile(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+}
+
+async function deleteSavedState() {
+  try {
+    await fs.unlink(STATE_FILE);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      throw error;
+    }
+  }
 }
 
 async function answerWithOllama(systemPrompt, messages, model) {
@@ -242,7 +299,7 @@ function readJsonBody(request) {
     request.on("data", (chunk) => {
       body += chunk;
 
-      if (body.length > 1_000_000) {
+      if (body.length > 5_000_000) {
         request.destroy();
         reject(new Error("Request body is too large."));
       }

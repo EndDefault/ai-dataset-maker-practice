@@ -47,5 +47,5 @@
 
 - Ollama 서버가 꺼져 있을 때 오류 메시지 개선
 - OpenAI API 키가 없을 때 안내 개선
-- localStorage 데이터가 손상되었을 때 복구 처리
+- `data/app-state.json` 데이터가 손상되었을 때 복구 처리
 - 데이터 export 후 줄바꿈과 JSON 유효성 검증

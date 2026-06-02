@@ -7,7 +7,7 @@ AI를 바로 학습시키기 전에, AI 프로필과 기억을 만들고 좋은 
 - `server.js`: 화면 파일을 제공하고, `/api/chat`에서 선택한 AI 제공자에 연결합니다.
 - `src/index.js`: 앱 진입점입니다. 화면 이벤트를 연결하고 전체 상태를 렌더링합니다.
 - `src/core/promptBuilder.js`: 프로필과 기억을 합쳐서 시스템 프롬프트를 만듭니다.
-- `src/core/storage.js`: 브라우저 `localStorage`에 데이터를 저장하고 JSONL 파일을 내려받습니다.
+- `src/core/storage.js`: 서버의 `/api/state`로 앱 상태를 저장하고 JSONL 파일을 내려받습니다.
 - `src/features/profiles/profiles.js`: AI 이름, 역할, 말투, 성격 같은 프로필을 만듭니다.
 - `src/features/memories/memories.js`: 사용자가 넣은 기억을 저장하고, 질문과 관련 있는 기억을 찾습니다.
 - `src/features/chat/chat.js`: 브라우저에서 로컬 서버의 `/api/chat`으로 메시지를 보냅니다.
@@ -87,6 +87,25 @@ AI 프로필 만들기
 ```
 
 이 방식은 모델을 바로 학습시키는 것이 아니라, 좋은 답변을 모아 나중에 학습 데이터로 쓰기 위한 준비 단계입니다.
+
+## 데이터 저장 위치
+
+앱 상태는 브라우저가 아니라 프로젝트 폴더의 JSON 파일에 저장됩니다.
+
+```txt
+data/app-state.json
+```
+
+저장되는 내용:
+
+- AI 프로필
+- 기억
+- 대화 기록
+- 좋은 예시 데이터셋
+- 실패 기록
+- 앱 설정
+
+`data/app-state.json`은 개인 작업 데이터라 Git에는 올리지 않습니다. 파인튜닝용 파일이 필요할 때는 데이터 탭에서 JSONL Export를 실행합니다.
 
 ## 다음 단계의 의미
 

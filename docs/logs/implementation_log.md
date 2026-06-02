@@ -159,3 +159,18 @@
 
 - 프로필이 존댓말이어도 제작 탭에서 냥체를 요구하면 export 데이터의 system도 냥체 기준을 따르게 한다.
 - 학습 데이터에서 system과 user의 말투 지시가 충돌하지 않도록 한다.
+
+## 2026-06-02 파일 기반 상태 저장 추가
+
+변경 요약:
+
+- `server.js`에 `/api/state` GET/PUT/DELETE 추가
+- 앱 상태를 `data/app-state.json` 파일에 저장하도록 변경
+- `src/core/storage.js`를 localStorage 대신 서버 API 호출 방식으로 변경
+- 앱 초기 상태 로딩을 비동기 처리로 변경
+- `data/app-state.json`은 Git에서 제외
+
+설계 결정:
+
+- 데이터셋 제작과 검수가 중요해졌기 때문에 브라우저 저장소보다 프로젝트 폴더의 파일 저장 방식을 사용한다.
+- 외부 `json-server` 패키지 대신 현재 서버에 작은 JSON 저장 API를 추가해 의존성을 늘리지 않는다.

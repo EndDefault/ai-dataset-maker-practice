@@ -1,25 +1,27 @@
-const STORAGE_KEY = "ai-maker-studio-state-v1";
+export async function loadState() {
+  const response = await fetch("/api/state");
 
-export function loadState() {
-  const rawState = localStorage.getItem(STORAGE_KEY);
-
-  if (!rawState) {
+  if (!response.ok) {
     return null;
   }
 
-  try {
-    return JSON.parse(rawState);
-  } catch {
-    return null;
-  }
+  return response.json();
 }
 
-export function saveState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export async function saveState(state) {
+  await fetch("/api/state", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(state),
+  });
 }
 
-export function clearState() {
-  localStorage.removeItem(STORAGE_KEY);
+export async function clearState() {
+  await fetch("/api/state", {
+    method: "DELETE",
+  });
 }
 
 export function downloadTextFile(filename, text) {
