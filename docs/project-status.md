@@ -69,8 +69,20 @@
 ### 8. 문서화
 
 - `README.md`: 실행 방법과 기능 설명
+- `docs/index.md`: 문서 목록과 갱신 규칙
+- `docs/requirements.md`: 요구사항 명세
+- `docs/data.md`: 데이터 모델과 JSONL 구조
+- `docs/seed_data.md`: 초기 데이터와 테스트 데이터 설계
+- `docs/checklist.md`: 단계별 개발 체크리스트
+- `docs/test_plan.md`: 테스트 전략과 케이스
+- `docs/test_result.md`: 테스트 실행 결과
+- `docs/implementation_log.md`: 구현 이력과 설계 결정
+- `docs/bugfix_log.md`: 버그 수정 기록
+- `docs/ui_index.md`: 주요 화면과 UI 구성
+- `docs/commit_convention.md`: 커밋 메시지 규칙과 기능 단위 커밋 기준
 - `practice/ai-learning-flow.md`: AI 학습 흐름 정리
 - `practice/data-making-next-step.md`: 답변 생성에서 데이터 제작으로 방향을 바꾼 이유 정리
+- `docs/portfolio-direction.md`: 포트폴리오 관점의 문제 정의, 구조, 데이터 흐름, 한계, 개선 방향 정리
 
 ## 지금까지 알게 된 점
 
@@ -114,6 +126,8 @@ AI 프로필 실험
 - 검수 완료 표시
 - 검수 완료된 데이터만 JSONL export
 
+포트폴리오 관점에서는 `docs/portfolio-direction.md`를 계속 업데이트한다. 구현이 바뀔 때마다 문제 정의, 구조, 데이터 흐름, 한계, 다음 개선 방향도 같이 수정한다.
+
 그 다음에는 한 가지 말투를 정해서 데이터 50~100개를 만드는 것이 좋다.
 
 현재 실험 말투 후보:
@@ -130,4 +144,3 @@ AI 프로필 실험
 ## 한 문장 요약
 
 지금 만든 것은 AI를 바로 학습시키는 앱이 아니라, 사람이 통제한 사실과 말투를 바탕으로 좋은 학습 데이터 후보를 만들고 저장하는 로컬 AI 데이터 제작 도구다.
-
