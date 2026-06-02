@@ -2,6 +2,7 @@ import { buildSystemPrompt } from "../../core/promptBuilder.js";
 import { findRelatedMemories } from "../memories/memories.js";
 
 const MAX_GOOD_EXAMPLES = 10;
+const MIN_RICH_EXAMPLE_LENGTH = 30;
 
 export function createMessage(role, content, extra = {}) {
   return {
@@ -95,16 +96,60 @@ export async function appendChatTurn(profile, userInput, settings, dataset = [])
 function findGoodExamples(profile, dataset) {
   return dataset
     .filter((item) => item.profileId === profile.id)
-    .filter((item) => {
-      const assistant = item.messages.find((message) => message.role === "assistant");
-      return assistant && !containsChineseCharacters(assistant.content);
+    .map(toGoodExampleCandidate)
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     })
-    .slice(-MAX_GOOD_EXAMPLES)
+    .slice(0, MAX_GOOD_EXAMPLES)
     .map((item) => ({
       id: item.id,
-      user: item.messages.find((message) => message.role === "user")?.content ?? "",
-      assistant: item.messages.find((message) => message.role === "assistant")?.content ?? "",
+      user: item.user,
+      assistant: item.assistant,
     }));
+}
+
+function toGoodExampleCandidate(item) {
+  const user = item.messages.find((message) => message.role === "user")?.content ?? "";
+  const assistant = item.messages.find((message) => message.role === "assistant")?.content ?? "";
+
+  if (!assistant || containsChineseCharacters(assistant)) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    user,
+    assistant,
+    createdAt: item.createdAt,
+    score: scoreGoodExample(item, user, assistant),
+  };
+}
+
+function scoreGoodExample(item, user, assistant) {
+  let score = 0;
+
+  if (item.source === "maker") {
+    score += 5;
+  }
+
+  if (assistant.length >= MIN_RICH_EXAMPLE_LENGTH) {
+    score += 2;
+  }
+
+  if (user.length >= MIN_RICH_EXAMPLE_LENGTH) {
+    score += 1;
+  }
+
+  if (assistant.length < 15) {
+    score -= 2;
+  }
+
+  return score;
 }
 
 function containsChineseCharacters(text) {
