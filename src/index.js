@@ -326,16 +326,17 @@ function containsChineseCharacters(text) {
   return /[\u3400-\u4DBF\u4E00-\u9FFF]/u.test(text);
 }
 
-function buildMakerSystemPrompt(profile) {
+function buildMakerSystemPrompt(profile, makerStyle) {
   return [
     "너는 학습 데이터 제작 도우미다.",
     "사용자가 제공한 핵심 사실만 사용해서 답변 초안을 만든다.",
     "핵심 사실에 없는 정보는 추가하지 않는다.",
     "모르면 추측하지 말고, 제공된 사실만으로 답할 수 없다고 말한다.",
     "모든 답변은 한국어로만 작성한다.",
-    `원하는 기본 말투: ${profile.tone}`,
+    "아래 원하는 말투와 형식을 프로필 기본 말투보다 우선한다.",
+    `원하는 말투와 형식:\n${makerStyle || "프로필 기본 말투를 따른다."}`,
     `AI 역할 참고: ${profile.role}`,
-    `답변 스타일 참고: ${profile.style}`,
+    `프로필 답변 스타일 참고: ${profile.style}`,
   ].join("\n");
 }
 
@@ -352,7 +353,7 @@ function buildMakerUserInput() {
 }
 
 async function requestMakerDraft(profile, settings) {
-  const systemPrompt = buildMakerSystemPrompt(profile);
+  const systemPrompt = buildMakerSystemPrompt(profile, elements.makerStyleInput.value.trim());
   const userInput = buildMakerUserInput();
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -499,7 +500,7 @@ elements.makerSaveButton.addEventListener("click", () => {
   }
 
   const profile = getActiveProfile();
-  const systemPrompt = buildMakerSystemPrompt(profile);
+  const systemPrompt = buildMakerSystemPrompt(profile, elements.makerStyleInput.value.trim());
   const userInput = buildMakerUserInput();
 
   state = {

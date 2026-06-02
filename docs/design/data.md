@@ -92,7 +92,7 @@ AI 프로필은 AI의 역할과 말투를 정의한다.
   messages: [
     {
       role: "system",
-      content: "시스템 프롬프트"
+      content: "제작 탭의 원하는 말투와 형식을 우선 반영한 시스템 프롬프트"
     },
     {
       role: "user",
@@ -130,6 +130,8 @@ AI 프로필은 AI의 역할과 말투를 정의한다.
 {"messages":[{"role":"system","content":"..."},{"role":"user","content":"..."},{"role":"assistant","content":"..."}]}
 {"messages":[{"role":"system","content":"..."},{"role":"user","content":"..."},{"role":"assistant","content":"..."}]}
 ```
+
+제작 탭에서 저장한 데이터는 `system` 메시지에 제작 탭의 `원하는 말투/형식`을 포함한다. 프로필 기본 말투와 제작 탭 말투가 다를 때는 제작 탭의 말투와 형식을 우선한다.
 
 ## 다음 데이터 구조 변경
 
