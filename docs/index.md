@@ -19,6 +19,7 @@
 | `development/commit_convention.md` | 커밋 메시지 규칙과 기능 단위 커밋 기준 |
 | `development/seed_data.md` | 초기 데이터와 테스트 데이터 설계 |
 | `development/curated_dataset.md` | 직접 검수한 50개 기준 데이터셋 생성 방식 |
+| `development/lora_plan.md` | LoRA 학습 실험 계획과 현재 환경 |
 | `testing/test_plan.md` | 테스트 전략, 테스트 케이스, 실행 방법 |
 | `testing/test_result.md` | 테스트 실행 결과 기록 |
 | `logs/implementation_log.md` | 구현 이력, 설계 결정, 트레이드오프 |
