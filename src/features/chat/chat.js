@@ -2,7 +2,7 @@ import { postChat } from "../../api/chatApi.js";
 import { buildSystemPrompt } from "../../core/promptBuilder.js";
 import { findRelatedMemories } from "../memories/memories.js";
 
-const MAX_GOOD_EXAMPLES = 10;
+const MAX_GOOD_EXAMPLES = 4;
 const MIN_RICH_EXAMPLE_LENGTH = 30;
 
 export function createMessage(role, content, extra = {}) {

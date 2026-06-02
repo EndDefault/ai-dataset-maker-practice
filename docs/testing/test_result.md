@@ -244,3 +244,15 @@
 실행 결과:
 
 - `node --check src\index.js` 통과
+
+## 2026-06-02 좋은 예시 오염 방지 프롬프트 조정
+
+테스트 범위:
+
+- 좋은 예시 포함 개수 축소
+- 시스템 프롬프트의 예시 복사 금지 규칙 추가
+
+실행 결과:
+
+- `node --check src\core\promptBuilder.js` 통과
+- `node --check src\features\chat\chat.js` 통과
