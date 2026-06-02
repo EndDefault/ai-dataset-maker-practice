@@ -188,3 +188,16 @@
 
 - 서버 API 호출은 `src/api` 폴더에서 담당한다.
 - `features`와 `core`는 직접 `fetch`하지 않고 API 모듈을 통해 서버와 통신한다.
+
+## 2026-06-02 더미 상태 생성 스크립트 추가
+
+변경 요약:
+
+- `scripts/create-seed-state.js` 추가
+- `docs/development/seed_data.md`의 15개 예시를 읽어 `data/app-state.json` 생성
+- `나비` 프로필과 제작 탭 기반 dataset 15개를 자동 구성
+
+설계 결정:
+
+- 더미 데이터를 수동으로 다시 입력하지 않도록 seed 문서 기반 생성 스크립트를 둔다.
+- 생성된 `data/app-state.json`은 개인 작업 데이터라 Git에는 올리지 않는다.

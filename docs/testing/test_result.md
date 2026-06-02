@@ -196,3 +196,20 @@
 - `node --check src\features\chat\chat.js` 통과
 - `node --check src\index.js` 통과
 - `src` 내 `fetch` 호출이 `src/api` 폴더에만 남아 있는지 확인
+
+## 2026-06-02 더미 상태 생성 스크립트 추가
+
+테스트 범위:
+
+- seed 문서 기반 더미 상태 생성
+- 생성된 상태 파일의 프로필과 dataset 개수 확인
+- `data/app-state.json` Git ignore 확인
+
+실행 결과:
+
+- `node --check scripts\create-seed-state.js` 통과
+- `node scripts\create-seed-state.js` 실행 성공
+- `data/app-state.json` 생성 확인
+- 프로필 1개, dataset 15개 확인
+- 첫 번째 dataset의 system 메시지에 `원하는 말투와 형식` 포함 확인
+- `git check-ignore -v data\app-state.json`으로 Git 제외 확인
