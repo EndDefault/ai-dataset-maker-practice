@@ -30,7 +30,7 @@
 
 변경 요약:
 
-- `docs/portfolio-direction.md` 추가
+- `docs/planning/portfolio-direction.md` 추가
 - 파인튜닝으로 기대할 수 있는 것과 한계 정리
 - 프로젝트를 포트폴리오에서 설명할 수 있는 초안 작성
 
@@ -54,7 +54,7 @@
 
 변경 요약:
 
-- `docs/commit_convention.md` 추가
+- `docs/development/commit_convention.md` 추가
 - 이모지, 타입 코드, 40자 이하 제목, 설명 1줄 형식 정리
 - 기능 단위 커밋 기준과 좋은 예시, 나쁜 예시 추가
 
@@ -62,3 +62,33 @@
 
 - 커밋 메시지는 한국어로 작성한다.
 - 커밋은 기능 단위로 작게 나누어 추적하기 쉽게 관리한다.
+
+## 2026-06-02 src 폴더 구조 계획 추가
+
+변경 요약:
+
+- `src/core`, `src/features`, `src/ui`, `src/api`, `src/utils` 폴더 추가
+- 기능별 하위 폴더 추가
+- `docs/design/src_structure.md`에 폴더별 책임과 기존 파일 이동 후보 정리
+
+설계 결정:
+
+- 기존 JavaScript 파일은 아직 옮기지 않는다.
+- 먼저 폴더의 책임만 정하고, 다음 기능부터 점진적으로 분리한다.
+- Git이 빈 폴더를 추적할 수 있도록 각 폴더에 `.gitkeep`을 둔다.
+
+## 2026-06-02 docs 폴더 구조 분리와 참고 문서 추가
+
+변경 요약:
+
+- `docs`를 `planning`, `design`, `development`, `testing`, `logs`, `reference`로 분리
+- `docs/planning/decision_log.md` 추가
+- `docs/planning/refactor_plan.md` 추가
+- `docs/design/architecture.md` 추가
+- `docs/reference/glossary.md` 추가
+
+설계 결정:
+
+- 문서가 많아졌기 때문에 루트에는 `index.md`와 `project-status.md`만 유지한다.
+- 공부와 면접 준비에 필요한 용어와 핵심 로직은 `docs/reference/glossary.md`에 따로 정리한다.
+- 코드 구조 변경 전에는 `docs/planning/refactor_plan.md`와 `docs/design/src_structure.md`를 함께 확인한다.
