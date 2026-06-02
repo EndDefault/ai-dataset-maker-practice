@@ -1,6 +1,8 @@
 import { buildSystemPrompt } from "../../core/promptBuilder.js";
 import { findRelatedMemories } from "../memories/memories.js";
 
+const MAX_GOOD_EXAMPLES = 10;
+
 export function createMessage(role, content, extra = {}) {
   return {
     id: crypto.randomUUID(),
@@ -97,7 +99,7 @@ function findGoodExamples(profile, dataset) {
       const assistant = item.messages.find((message) => message.role === "assistant");
       return assistant && !containsChineseCharacters(assistant.content);
     })
-    .slice(-3)
+    .slice(-MAX_GOOD_EXAMPLES)
     .map((item) => ({
       id: item.id,
       user: item.messages.find((message) => message.role === "user")?.content ?? "",
