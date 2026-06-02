@@ -4,7 +4,7 @@
 
 ## 정리 방향
 
-지금 `src/app.js`는 렌더링, 이벤트 연결, 상태 변경, 데이터 저장, 채팅, 데이터 제작 흐름을 많이 담당한다. MVP 단계에서는 빠르게 만들 수 있지만, 데이터 검수 기능과 학습 실험 기능이 추가되면 파일이 너무 커질 수 있다.
+지금 `src/index.js`는 렌더링, 이벤트 연결, 상태 변경, 데이터 저장, 채팅, 데이터 제작 흐름을 많이 담당한다. MVP 단계에서는 빠르게 만들 수 있지만, 데이터 검수 기능과 학습 실험 기능이 추가되면 파일이 너무 커질 수 있다.
 
 따라서 다음 원칙으로 천천히 분리한다.
 
@@ -143,17 +143,26 @@ AI 프로필 관련 기능을 둔다.
 - 문자열 정리
 - 입력값 검증
 
-## 기존 파일 이동 후보
+## 현재 파일 배치
 
-| 현재 파일 | 나중에 둘 위치 |
+| 파일 | 역할 |
 | --- | --- |
-| `src/profiles.js` | `src/features/profiles/` |
-| `src/memories.js` | `src/features/memories/` |
-| `src/chat.js` | `src/features/chat/` 또는 `src/api/` |
-| `src/dataset.js` | `src/features/dataset/` |
-| `src/promptBuilder.js` | `src/core/` 또는 `src/features/profiles/` |
-| `src/storage.js` | `src/core/` 또는 `src/utils/` |
-| `src/app.js` | 작은 기능 단위로 점진 분리 |
+| `src/index.js` | 앱 진입점, 전체 렌더링과 이벤트 연결 |
+| `src/core/promptBuilder.js` | 시스템 프롬프트 생성 |
+| `src/core/storage.js` | localStorage 저장과 파일 다운로드 |
+| `src/features/profiles/profiles.js` | AI 프로필 생성, 수정, 요약 |
+| `src/features/memories/memories.js` | 기억 추가, 삭제, 관련 기억 검색 |
+| `src/features/chat/chat.js` | 채팅 메시지 생성과 AI 답변 요청 흐름 |
+| `src/features/dataset/dataset.js` | 학습 데이터 후보 생성과 JSONL 변환 |
+
+## 아직 더 분리할 후보
+
+| 현재 위치 | 나중에 둘 위치 |
+| --- | --- |
+| `src/index.js`의 데이터 목록 렌더링 | `src/ui/` |
+| `src/index.js`의 데이터 제작 탭 흐름 | `src/features/data-maker/` |
+| `src/index.js`의 설정 처리 | `src/features/settings/` |
+| `src/features/chat/chat.js`의 `/api/chat` 호출 | `src/api/` |
 
 ## 첫 리팩터링 후보
 

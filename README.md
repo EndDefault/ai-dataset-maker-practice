@@ -5,13 +5,13 @@ AI를 바로 학습시키기 전에, AI 프로필과 기억을 만들고 좋은 
 ## 기능별 구조
 
 - `server.js`: 화면 파일을 제공하고, `/api/chat`에서 선택한 AI 제공자에 연결합니다.
-- `src/profiles.js`: AI 이름, 역할, 말투, 성격 같은 프로필을 만듭니다.
-- `src/memories.js`: 사용자가 넣은 기억을 저장하고, 질문과 관련 있는 기억을 찾습니다.
-- `src/promptBuilder.js`: 프로필과 기억을 합쳐서 시스템 프롬프트를 만듭니다.
-- `src/chat.js`: 브라우저에서 로컬 서버의 `/api/chat`으로 메시지를 보냅니다.
-- `src/dataset.js`: 좋은 답변을 파인튜닝에 쓰기 좋은 `messages` 형태로 바꿉니다.
-- `src/storage.js`: 브라우저 `localStorage`에 데이터를 저장하고 JSONL 파일을 내려받습니다.
-- `src/app.js`: 화면 이벤트를 연결하고 전체 상태를 렌더링합니다.
+- `src/index.js`: 앱 진입점입니다. 화면 이벤트를 연결하고 전체 상태를 렌더링합니다.
+- `src/core/promptBuilder.js`: 프로필과 기억을 합쳐서 시스템 프롬프트를 만듭니다.
+- `src/core/storage.js`: 브라우저 `localStorage`에 데이터를 저장하고 JSONL 파일을 내려받습니다.
+- `src/features/profiles/profiles.js`: AI 이름, 역할, 말투, 성격 같은 프로필을 만듭니다.
+- `src/features/memories/memories.js`: 사용자가 넣은 기억을 저장하고, 질문과 관련 있는 기억을 찾습니다.
+- `src/features/chat/chat.js`: 브라우저에서 로컬 서버의 `/api/chat`으로 메시지를 보냅니다.
+- `src/features/dataset/dataset.js`: 좋은 답변을 파인튜닝에 쓰기 좋은 `messages` 형태로 바꿉니다.
 
 ## Ollama로 무료 연습하기
 

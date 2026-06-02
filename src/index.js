@@ -1,9 +1,9 @@
-import { clearState, downloadTextFile, loadState, saveState } from "./storage.js";
-import { createProfile, summarizeProfile, updateProfile } from "./profiles.js";
-import { addMemory, removeMemory } from "./memories.js";
-import { buildSystemPrompt } from "./promptBuilder.js";
-import { appendChatTurn } from "./chat.js";
-import { createDatasetItem, createDatasetItemFromParts, createFailureItem, toJsonl } from "./dataset.js";
+import { buildSystemPrompt } from "./core/promptBuilder.js";
+import { clearState, downloadTextFile, loadState, saveState } from "./core/storage.js";
+import { appendChatTurn } from "./features/chat/chat.js";
+import { createDatasetItem, createDatasetItemFromParts, createFailureItem, toJsonl } from "./features/dataset/dataset.js";
+import { addMemory, removeMemory } from "./features/memories/memories.js";
+import { createProfile, summarizeProfile, updateProfile } from "./features/profiles/profiles.js";
 
 const fallbackProfile = createProfile();
 const defaultSettings = {

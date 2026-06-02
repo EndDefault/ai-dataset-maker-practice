@@ -92,3 +92,18 @@
 - 문서가 많아졌기 때문에 루트에는 `index.md`와 `project-status.md`만 유지한다.
 - 공부와 면접 준비에 필요한 용어와 핵심 로직은 `docs/reference/glossary.md`에 따로 정리한다.
 - 코드 구조 변경 전에는 `docs/planning/refactor_plan.md`와 `docs/design/src_structure.md`를 함께 확인한다.
+
+## 2026-06-02 기존 JavaScript 파일 구조 재배치
+
+변경 요약:
+
+- `src/app.js`를 `src/index.js`로 변경
+- `promptBuilder.js`, `storage.js`를 `src/core`로 이동
+- `profiles.js`, `memories.js`, `chat.js`, `dataset.js`를 `src/features` 하위 기능 폴더로 이동
+- `index.html`의 모듈 진입점을 `src/index.js`로 변경
+
+설계 결정:
+
+- 앱 진입점은 `src/index.js` 하나로 둔다.
+- 기능 도메인 로직은 `src/features/*`에 둔다.
+- 화면 렌더링은 아직 `src/index.js`에 남겨두고, 다음 리팩터링에서 `src/ui`로 점진 분리한다.

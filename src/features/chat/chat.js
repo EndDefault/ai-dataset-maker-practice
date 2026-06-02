@@ -1,5 +1,5 @@
-import { findRelatedMemories } from "./memories.js";
-import { buildSystemPrompt } from "./promptBuilder.js";
+import { buildSystemPrompt } from "../../core/promptBuilder.js";
+import { findRelatedMemories } from "../memories/memories.js";
 
 export function createMessage(role, content, extra = {}) {
   return {

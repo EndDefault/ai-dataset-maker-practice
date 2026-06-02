@@ -38,15 +38,15 @@ Browser UI
 
 현재 주요 파일:
 
-- `src/app.js`: 화면 렌더링과 이벤트 연결
-- `src/chat.js`: AI 답변 요청 흐름
-- `src/dataset.js`: 학습 데이터 후보 생성과 JSONL 변환
-- `src/profiles.js`: AI 프로필 생성과 수정
-- `src/memories.js`: 기억 추가, 삭제, 관련 기억 검색
-- `src/promptBuilder.js`: 시스템 프롬프트 생성
-- `src/storage.js`: localStorage 저장과 파일 다운로드
+- `src/index.js`: 화면 렌더링과 이벤트 연결
+- `src/core/promptBuilder.js`: 시스템 프롬프트 생성
+- `src/core/storage.js`: localStorage 저장과 파일 다운로드
+- `src/features/profiles/profiles.js`: AI 프로필 생성과 수정
+- `src/features/memories/memories.js`: 기억 추가, 삭제, 관련 기억 검색
+- `src/features/chat/chat.js`: AI 답변 요청 흐름
+- `src/features/dataset/dataset.js`: 학습 데이터 후보 생성과 JSONL 변환
 
-앞으로는 `src/features`, `src/ui`, `src/api`, `src/core`, `src/utils`로 점진 분리한다.
+앞으로는 화면 렌더링을 `src/ui`, API 호출을 `src/api`, 데이터 제작 흐름을 `src/features/data-maker`로 더 분리한다.
 
 ### Server
 

@@ -8,7 +8,7 @@
 ai-maker-studio-state
 ```
 
-앱은 `src/storage.js`에서 상태를 읽고 저장한다.
+앱은 `src/core/storage.js`에서 상태를 읽고 저장한다.
 
 ## 전체 상태 구조
 
