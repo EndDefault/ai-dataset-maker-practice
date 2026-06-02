@@ -1,3 +1,4 @@
+import { postChat } from "../../api/chatApi.js";
 import { buildSystemPrompt } from "../../core/promptBuilder.js";
 import { findRelatedMemories } from "../memories/memories.js";
 
@@ -26,24 +27,12 @@ export async function answerWithSelectedProvider(profile, userInput, settings, d
       content: message.content,
     }));
 
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      provider: settings.provider,
-      model: settings.model,
-      systemPrompt,
-      messages: [...recentMessages, { role: "user", content: userInput }],
-    }),
+  const data = await postChat({
+    provider: settings.provider,
+    model: settings.model,
+    systemPrompt,
+    messages: [...recentMessages, { role: "user", content: userInput }],
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error ?? "AI response failed.");
-  }
 
   return {
     message: createMessage("assistant", data.answer, {

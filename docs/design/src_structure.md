@@ -130,6 +130,7 @@ AI 프로필 관련 기능을 둔다.
 예상 대상:
 
 - `/api/chat` 호출
+- `/api/state` 호출
 - API 오류 메시지 정리
 
 ### `src/utils`
@@ -148,8 +149,10 @@ AI 프로필 관련 기능을 둔다.
 | 파일 | 역할 |
 | --- | --- |
 | `src/index.js` | 앱 진입점, 전체 렌더링과 이벤트 연결 |
+| `src/api/chatApi.js` | `/api/chat` 요청 |
+| `src/api/stateApi.js` | `/api/state` 요청 |
 | `src/core/promptBuilder.js` | 시스템 프롬프트 생성 |
-| `src/core/storage.js` | `/api/state` 저장 요청과 파일 다운로드 |
+| `src/core/storage.js` | 상태 저장 의미와 파일 다운로드 |
 | `src/features/profiles/profiles.js` | AI 프로필 생성, 수정, 요약 |
 | `src/features/memories/memories.js` | 기억 추가, 삭제, 관련 기억 검색 |
 | `src/features/chat/chat.js` | 채팅 메시지 생성과 AI 답변 요청 흐름 |
@@ -162,7 +165,7 @@ AI 프로필 관련 기능을 둔다.
 | `src/index.js`의 데이터 목록 렌더링 | `src/ui/` |
 | `src/index.js`의 데이터 제작 탭 흐름 | `src/features/data-maker/` |
 | `src/index.js`의 설정 처리 | `src/features/settings/` |
-| `src/features/chat/chat.js`의 `/api/chat` 호출 | `src/api/` |
+| `src/index.js`의 데이터 제작 탭 흐름 | `src/features/data-maker/` |
 
 ## 첫 리팩터링 후보
 

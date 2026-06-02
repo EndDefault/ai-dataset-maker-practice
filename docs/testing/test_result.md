@@ -180,3 +180,19 @@
 - `PUT /api/state`로 `data/app-state.json` 생성 확인
 - `GET /api/state`로 저장 상태 재조회 확인
 - `DELETE /api/state`로 테스트 상태 삭제 확인
+
+## 2026-06-02 API 클라이언트 모듈 분리
+
+테스트 범위:
+
+- `/api/chat` 호출 모듈 분리
+- `/api/state` 호출 모듈 분리
+- 기존 호출부 import 경로 수정
+
+실행 결과:
+
+- `node --check src\api\chatApi.js` 통과
+- `node --check src\api\stateApi.js` 통과
+- `node --check src\features\chat\chat.js` 통과
+- `node --check src\index.js` 통과
+- `src` 내 `fetch` 호출이 `src/api` 폴더에만 남아 있는지 확인

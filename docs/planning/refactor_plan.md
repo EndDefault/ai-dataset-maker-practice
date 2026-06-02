@@ -82,12 +82,16 @@
 
 - 브라우저에서 서버 `/api/chat`을 호출하는 코드가 채팅 흐름과 섞이면 제공자별 오류 처리가 어려워진다.
 
-작업 후보:
+완료된 작업:
 
-1. `/api/chat` 호출 함수 분리
-2. API 오류 메시지 정리
-3. Ollama 연결 실패 안내 개선
-4. OpenAI API 키 누락 안내 개선
+- `/api/chat` 호출 함수를 `src/api/chatApi.js`로 분리
+- `/api/state` 호출 함수를 `src/api/stateApi.js`로 분리
+
+남은 작업:
+
+1. API 오류 메시지 정리
+2. Ollama 연결 실패 안내 개선
+3. OpenAI API 키 누락 안내 개선
 
 ## 보류할 것
 

@@ -174,3 +174,17 @@
 
 - 데이터셋 제작과 검수가 중요해졌기 때문에 브라우저 저장소보다 프로젝트 폴더의 파일 저장 방식을 사용한다.
 - 외부 `json-server` 패키지 대신 현재 서버에 작은 JSON 저장 API를 추가해 의존성을 늘리지 않는다.
+
+## 2026-06-02 API 클라이언트 모듈 분리
+
+변경 요약:
+
+- `src/api/chatApi.js` 추가
+- `src/api/stateApi.js` 추가
+- `/api/chat` 호출을 `chatApi`로 이동
+- `/api/state` 호출을 `stateApi`로 이동
+
+설계 결정:
+
+- 서버 API 호출은 `src/api` 폴더에서 담당한다.
+- `features`와 `core`는 직접 `fetch`하지 않고 API 모듈을 통해 서버와 통신한다.

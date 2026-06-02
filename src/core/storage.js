@@ -1,27 +1,15 @@
+import { deleteState, fetchState, putState } from "../api/stateApi.js";
+
 export async function loadState() {
-  const response = await fetch("/api/state");
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return response.json();
+  return fetchState();
 }
 
 export async function saveState(state) {
-  await fetch("/api/state", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(state),
-  });
+  await putState(state);
 }
 
 export async function clearState() {
-  await fetch("/api/state", {
-    method: "DELETE",
-  });
+  await deleteState();
 }
 
 export function downloadTextFile(filename, text) {

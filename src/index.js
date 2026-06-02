@@ -1,5 +1,6 @@
 import { buildSystemPrompt } from "./core/promptBuilder.js";
 import { clearState, downloadTextFile, loadState, saveState } from "./core/storage.js";
+import { postChat } from "./api/chatApi.js";
 import { appendChatTurn } from "./features/chat/chat.js";
 import { createDatasetItem, createDatasetItemFromParts, createFailureItem, toJsonl } from "./features/dataset/dataset.js";
 import { addMemory, removeMemory } from "./features/memories/memories.js";
@@ -359,23 +360,12 @@ function buildMakerUserInput() {
 async function requestMakerDraft(profile, settings) {
   const systemPrompt = buildMakerSystemPrompt(profile, elements.makerStyleInput.value.trim());
   const userInput = buildMakerUserInput();
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      provider: settings.provider,
-      model: settings.model,
-      systemPrompt,
-      messages: [{ role: "user", content: userInput }],
-    }),
+  const data = await postChat({
+    provider: settings.provider,
+    model: settings.model,
+    systemPrompt,
+    messages: [{ role: "user", content: userInput }],
   });
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error ?? "초안을 만들지 못했습니다.");
-  }
 
   return data.answer;
 }
