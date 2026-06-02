@@ -71,6 +71,8 @@ http://localhost:5173
 - 데이터가 있을 때 `ai-maker-dataset.jsonl` 파일이 내려받아지는지 확인한다.
 - 각 줄이 올바른 JSON인지 확인한다.
 - 각 항목에 `system`, `user`, `assistant` 메시지가 있는지 확인한다.
+- 저장된 좋은 예시를 수정하면 export 결과의 assistant 메시지도 바뀌는지 확인한다.
+- 저장된 좋은 예시를 삭제하면 목록과 export 결과에서 사라지는지 확인한다.
 
 ## 앞으로 추가할 테스트
 

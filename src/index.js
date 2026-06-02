@@ -275,15 +275,25 @@ function renderDataset() {
       .slice()
       .reverse()
       .forEach((item) => {
-        const userMessage = item.messages.find((message) => message.role === "user");
-        const assistantMessage = item.messages.find((message) => message.role === "assistant");
+        const userMessage = getDatasetMessage(item, "user");
+        const assistantMessage = getDatasetMessage(item, "assistant");
         const itemElement = document.createElement("div");
         itemElement.className = "dataset-item";
         itemElement.innerHTML = `
           <span>${item.profileName} · ${new Date(item.createdAt).toLocaleString("ko-KR")}</span>
           <strong>${escapeHtml(userMessage.content)}</strong>
           <span>${escapeHtml(assistantMessage.content.slice(0, 120))}</span>
+          <div class="item-actions">
+            <button type="button" data-action="edit-dataset">수정</button>
+            <button class="danger-button" type="button" data-action="delete-dataset">삭제</button>
+          </div>
         `;
+        itemElement.querySelector('[data-action="edit-dataset"]').addEventListener("click", () => {
+          editDatasetItem(item);
+        });
+        itemElement.querySelector('[data-action="delete-dataset"]').addEventListener("click", () => {
+          deleteDatasetItem(item);
+        });
         goodSection.append(itemElement);
       });
   }
@@ -311,6 +321,51 @@ function renderDataset() {
   }
 
   elements.datasetList.append(goodSection, failureSection);
+}
+
+function getDatasetMessage(item, role) {
+  return item.messages.find((message) => message.role === role) ?? { role, content: "" };
+}
+
+function editDatasetItem(item) {
+  const assistantMessage = getDatasetMessage(item, "assistant");
+  const nextAnswer = prompt("좋은 예시 답변을 수정해 주세요.", assistantMessage.content);
+
+  if (!nextAnswer?.trim()) {
+    return;
+  }
+
+  state = {
+    ...state,
+    dataset: state.dataset.map((datasetItem) => {
+      if (datasetItem.id !== item.id) {
+        return datasetItem;
+      }
+
+      return {
+        ...datasetItem,
+        updatedAt: new Date().toISOString(),
+        messages: datasetItem.messages.map((message) => {
+          return message.role === "assistant" ? { ...message, content: nextAnswer.trim() } : message;
+        }),
+      };
+    }),
+  };
+  persistAndRender();
+}
+
+function deleteDatasetItem(item) {
+  const userMessage = getDatasetMessage(item, "user");
+
+  if (!confirm(`이 좋은 예시를 삭제할까요?\n\n${userMessage.content.slice(0, 80)}`)) {
+    return;
+  }
+
+  state = {
+    ...state,
+    dataset: state.dataset.filter((datasetItem) => datasetItem.id !== item.id),
+  };
+  persistAndRender();
 }
 
 function escapeHtml(value) {
