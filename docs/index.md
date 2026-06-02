@@ -8,6 +8,7 @@
 | --- | --- |
 | `project-status.md` | 현재 진행 상태와 다음 작업 |
 | `planning/portfolio-direction.md` | 포트폴리오 관점의 문제 정의, 구조, 한계, 개선 방향 |
+| `planning/lora-generator-direction.md` | 템플릿 기반 LoRA 데이터셋 생성기 방향 기획 |
 | `planning/requirements.md` | 사용자 시나리오, 기능 요구사항, 비기능 요구사항 |
 | `planning/checklist.md` | 단계별 개발 체크리스트 |
 | `planning/decision_log.md` | 중요한 의사결정과 이유 |

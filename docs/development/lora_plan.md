@@ -4,7 +4,7 @@
 
 현재 앱에서 50개 좋은 예시를 프롬프트에 넣는 방식은 파인튜닝이 아니다. 모델 자체가 학습된 것이 아니므로, Ollama 기본 모델은 여전히 중국어를 섞거나 냥체를 놓치거나 예시를 어색하게 따라 할 수 있다.
 
-`ai-maker-dataset.jsonl`은 학습이 끝난 결과물이 아니라 LoRA 학습에 넣을 1차 데이터셋이다.
+`ai-maker-dataset.jsonl`은 학습이 끝난 결과물이 아니라 LoRA 학습에 넣을 1차 데이터셋이다. 1차 실험에서는 이 50개 데이터로 `Qwen2.5 0.5B` LoRA adapter 생성까지 확인했다.
 
 ## 현재 확인한 환경
 
@@ -13,9 +13,27 @@
 - Ollama 모델: `qwen2.5:3b`, `qwen2.5:7b`
 - JSONL 데이터: 50줄
 - JSONL 구조: 각 줄이 `system`, `user`, `assistant` 메시지를 포함
-- 아직 설치되지 않은 학습 패키지: `torch`, `transformers`, `datasets`, `peft`
+- 학습 패키지: `.venv`에 `torch`, `transformers`, `datasets`, `peft`, `accelerate` 설치 확인
+- 1차 결과: `training/output/qwen2.5-0.5b-nabi-lora/adapter_model.safetensors` 생성 확인
 
-## 권장 첫 실험
+## 1차 실험 결과
+
+목표는 완벽한 모델을 만드는 것이 아니라 다음을 확인하는 것이었다.
+
+- JSONL 데이터가 학습에 들어가는가
+- LoRA 어댑터가 생성되는가
+- 학습 전후 같은 질문에서 말투와 답변 길이가 달라지는가
+- 50개 데이터만으로 어떤 한계가 남는가
+
+확인 결과:
+
+- JSONL 50개 구조 검증 통과
+- `Qwen/Qwen2.5-0.5B-Instruct` 다운로드와 로드 확인
+- 20 step 짧은 LoRA 학습 실행
+- adapter 파일 생성 확인
+- 원본 모델과 LoRA adapter 적용 모델의 출력 차이 확인
+
+## 다음 권장 실험
 
 처음부터 7B로 가지 않는다. RTX 3050 8GB에서는 7B LoRA도 부담이 클 수 있으므로, 1차 실험은 작은 모델로 학습 흐름을 확인한다.
 
@@ -26,13 +44,6 @@ Qwen2.5 0.5B LoRA
 → Qwen2.5 1.5B LoRA
 → 가능하면 Qwen2.5 3B LoRA
 ```
-
-목표는 완벽한 모델을 만드는 것이 아니라 다음을 확인하는 것이다.
-
-- JSONL 데이터가 학습에 들어가는가
-- LoRA 어댑터가 생성되는가
-- 학습 전후 같은 질문에서 말투와 답변 길이가 달라지는가
-- 50개 데이터만으로 어떤 한계가 남는가
 
 ## 예상 흐름
 
@@ -55,7 +66,7 @@ Qwen2.5 0.5B LoRA
 
 ## 다음 작업 후보
 
-- `scripts/validate-jsonl.js` 또는 Python 검증 스크립트 추가
-- `training/` 폴더 생성
-- LoRA 학습 스크립트 초안 작성
-- 학습 전후 비교 질문 10개 문서화
+- 학습 결과와 한계 문서화
+- LoRA 프로젝트와 템플릿 기반 데이터 생성 방향 구체화
+- 목적별 데이터셋을 100개 이상으로 확장
+- LoRA adapter 병합과 Ollama 등록 흐름 조사

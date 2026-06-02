@@ -2,9 +2,22 @@ import { buildSystemPrompt } from "./core/promptBuilder.js";
 import { clearState, downloadTextFile, loadState, saveState } from "./core/storage.js";
 import { postChat } from "./api/chatApi.js";
 import { appendChatTurn } from "./features/chat/chat.js";
-import { createDatasetItem, createDatasetItemFromParts, createFailureItem, toJsonl } from "./features/dataset/dataset.js";
+import {
+  createDatasetItem,
+  createDatasetItemFromParts,
+  createDatasetItemFromTemplate,
+  createFailureItem,
+  toJsonl,
+} from "./features/dataset/dataset.js";
 import { addMemory, removeMemory } from "./features/memories/memories.js";
 import { createProfile, summarizeProfile, updateProfile } from "./features/profiles/profiles.js";
+import {
+  createLoraProject,
+  createLoraTemplate,
+  getProjectDataset,
+  updateLoraProject,
+  updateLoraTemplate,
+} from "./features/lora/loraProjects.js";
 
 const fallbackProfile = createProfile();
 const defaultSettings = {
@@ -48,6 +61,25 @@ const elements = {
   makerAnswerInput: document.querySelector("#makerAnswerInput"),
   makerSaveButton: document.querySelector("#makerSaveButton"),
   makerClearButton: document.querySelector("#makerClearButton"),
+  newLoraProjectButton: document.querySelector("#newLoraProjectButton"),
+  loraProjectList: document.querySelector("#loraProjectList"),
+  loraProjectForm: document.querySelector("#loraProjectForm"),
+  loraProjectNameInput: document.querySelector("#loraProjectNameInput"),
+  loraPurposeInput: document.querySelector("#loraPurposeInput"),
+  loraBaseModelInput: document.querySelector("#loraBaseModelInput"),
+  loraTargetCountInput: document.querySelector("#loraTargetCountInput"),
+  loraTemplateNameInput: document.querySelector("#loraTemplateNameInput"),
+  loraSystemPromptInput: document.querySelector("#loraSystemPromptInput"),
+  loraUserFormatInput: document.querySelector("#loraUserFormatInput"),
+  loraOutputFormatInput: document.querySelector("#loraOutputFormatInput"),
+  loraForbiddenInput: document.querySelector("#loraForbiddenInput"),
+  loraChecklistInput: document.querySelector("#loraChecklistInput"),
+  loraExampleSeedInput: document.querySelector("#loraExampleSeedInput"),
+  loraCandidateUserInput: document.querySelector("#loraCandidateUserInput"),
+  loraCandidateAnswerInput: document.querySelector("#loraCandidateAnswerInput"),
+  saveLoraCandidateButton: document.querySelector("#saveLoraCandidateButton"),
+  exportLoraProjectButton: document.querySelector("#exportLoraProjectButton"),
+  loraProjectSummary: document.querySelector("#loraProjectSummary"),
   datasetList: document.querySelector("#datasetList"),
   exportButton: document.querySelector("#exportButton"),
   clearDatasetButton: document.querySelector("#clearDatasetButton"),
@@ -64,6 +96,9 @@ function normalizeState(nextState) {
       ...(nextState.settings ?? {}),
     },
     failures: nextState.failures ?? [],
+    loraProjects: nextState.loraProjects ?? [],
+    loraTemplates: nextState.loraTemplates ?? [],
+    activeLoraProjectId: nextState.activeLoraProjectId ?? nextState.loraProjects?.[0]?.id ?? null,
   };
 }
 
@@ -71,13 +106,28 @@ function createDefaultState() {
   return {
     profiles: [fallbackProfile],
     activeProfileId: fallbackProfile.id,
+    activeLoraProjectId: null,
     dataset: [],
     failures: [],
+    loraProjects: [],
+    loraTemplates: [],
   };
 }
 
 function getActiveProfile() {
   return state.profiles.find((profile) => profile.id === state.activeProfileId) ?? state.profiles[0];
+}
+
+function getActiveLoraProject() {
+  return state.loraProjects.find((project) => project.id === state.activeLoraProjectId) ?? state.loraProjects[0] ?? null;
+}
+
+function getActiveLoraTemplate(project = getActiveLoraProject()) {
+  if (!project) {
+    return null;
+  }
+
+  return state.loraTemplates.find((template) => template.projectId === project.id) ?? null;
 }
 
 function replaceActiveProfile(nextProfile) {
@@ -110,6 +160,7 @@ function render() {
   renderProfileForm(profile);
   renderMessages(profile);
   renderMemories(profile);
+  renderLoraProjects();
   renderDataset();
 }
 
@@ -321,6 +372,112 @@ function renderDataset() {
   }
 
   elements.datasetList.append(goodSection, failureSection);
+}
+
+function renderLoraProjects() {
+  const activeProject = getActiveLoraProject();
+  const activeTemplate = getActiveLoraTemplate(activeProject);
+
+  elements.loraProjectList.innerHTML = "";
+
+  if (state.loraProjects.length === 0) {
+    elements.loraProjectList.innerHTML =
+      '<div class="empty-state">아직 LoRA 프로젝트가 없습니다. 첫 프로젝트를 만들어보세요.</div>';
+  } else {
+    state.loraProjects.forEach((project) => {
+      const projectDataset = getProjectDataset(state.dataset, project.id);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `project-item ${project.id === activeProject?.id ? "active" : ""}`;
+      button.innerHTML = `
+        <strong>${escapeHtml(project.name)}</strong>
+        <span>${escapeHtml(project.purpose.slice(0, 80))}</span>
+        <span>목표 ${project.targetCount}개 · 후보 ${projectDataset.length}개 · ${escapeHtml(project.baseModel)}</span>
+      `;
+      button.addEventListener("click", () => {
+        state = { ...state, activeLoraProjectId: project.id };
+        persistAndRender();
+      });
+      elements.loraProjectList.append(button);
+    });
+  }
+
+  renderLoraProjectForm(activeProject, activeTemplate);
+  renderLoraProjectSummary(activeProject, activeTemplate);
+}
+
+function renderLoraProjectForm(project, template) {
+  const disabled = !project || !template;
+  const fields = [
+    elements.loraProjectNameInput,
+    elements.loraPurposeInput,
+    elements.loraBaseModelInput,
+    elements.loraTargetCountInput,
+    elements.loraTemplateNameInput,
+    elements.loraSystemPromptInput,
+    elements.loraUserFormatInput,
+    elements.loraOutputFormatInput,
+    elements.loraForbiddenInput,
+    elements.loraChecklistInput,
+    elements.loraExampleSeedInput,
+    elements.loraCandidateUserInput,
+    elements.loraCandidateAnswerInput,
+    elements.saveLoraCandidateButton,
+    elements.exportLoraProjectButton,
+  ];
+
+  fields.forEach((field) => {
+    field.disabled = disabled;
+  });
+
+  if (disabled) {
+    elements.loraProjectNameInput.value = "";
+    elements.loraPurposeInput.value = "";
+    elements.loraBaseModelInput.value = "";
+    elements.loraTargetCountInput.value = "";
+    elements.loraTemplateNameInput.value = "";
+    elements.loraSystemPromptInput.value = "";
+    elements.loraUserFormatInput.value = "";
+    elements.loraOutputFormatInput.value = "";
+    elements.loraForbiddenInput.value = "";
+    elements.loraChecklistInput.value = "";
+    elements.loraExampleSeedInput.value = "";
+    elements.loraCandidateUserInput.value = "";
+    elements.loraCandidateAnswerInput.value = "";
+    return;
+  }
+
+  elements.loraProjectNameInput.value = project.name;
+  elements.loraPurposeInput.value = project.purpose;
+  elements.loraBaseModelInput.value = project.baseModel;
+  elements.loraTargetCountInput.value = project.targetCount;
+  elements.loraTemplateNameInput.value = template.name;
+  elements.loraSystemPromptInput.value = template.systemPrompt;
+  elements.loraUserFormatInput.value = template.userFormat;
+  elements.loraOutputFormatInput.value = template.outputFormat;
+  elements.loraForbiddenInput.value = template.forbidden;
+  elements.loraChecklistInput.value = template.checklist;
+  elements.loraExampleSeedInput.value = template.exampleSeed;
+}
+
+function renderLoraProjectSummary(project, template) {
+  if (!project || !template) {
+    elements.loraProjectSummary.innerHTML =
+      "<strong>다음 단계</strong><span>프로젝트를 만들면 템플릿과 체크리스트를 저장할 수 있습니다.</span>";
+    return;
+  }
+
+  const projectDataset = getProjectDataset(state.dataset, project.id);
+  const reviewedCount = projectDataset.filter((item) => item.reviewStatus === "reviewed").length;
+  const autoCheckedCount = projectDataset.filter((item) => item.reviewStatus === "auto_checked").length;
+
+  elements.loraProjectSummary.innerHTML = `
+    <strong>${escapeHtml(project.name)}</strong>
+    <span>목적: ${escapeHtml(project.purpose)}</span>
+    <span>베이스 모델: ${escapeHtml(project.baseModel)}</span>
+    <span>목표 데이터: ${project.targetCount}개 · 현재 후보: ${projectDataset.length}개 · 자동 통과: ${autoCheckedCount}개 · 검수 완료: ${reviewedCount}개</span>
+    <span>다음 구현: 이 템플릿으로 후보를 여러 개 생성하고, 코드 검사와 AI 평가 결과를 저장하는 흐름을 붙입니다.</span>
+  `;
 }
 
 function getDatasetMessage(item, role) {
@@ -562,6 +719,109 @@ elements.makerSaveButton.addEventListener("click", () => {
 
 elements.makerClearButton.addEventListener("click", () => {
   clearMakerForm();
+});
+
+elements.newLoraProjectButton.addEventListener("click", () => {
+  const nextProject = createLoraProject({
+    name: `LoRA 프로젝트 ${state.loraProjects.length + 1}`,
+  });
+  const nextTemplate = createLoraTemplate(nextProject.id, {
+    name: `${nextProject.name} 템플릿`,
+  });
+
+  state = {
+    ...state,
+    loraProjects: [...state.loraProjects, nextProject],
+    loraTemplates: [...state.loraTemplates, nextTemplate],
+    activeLoraProjectId: nextProject.id,
+  };
+  persistAndRender();
+});
+
+elements.loraProjectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const project = getActiveLoraProject();
+  const template = getActiveLoraTemplate(project);
+
+  if (!project || !template) {
+    alert("먼저 LoRA 프로젝트를 만들어 주세요.");
+    return;
+  }
+
+  state = {
+    ...state,
+    loraProjects: state.loraProjects.map((item) => {
+      if (item.id !== project.id) {
+        return item;
+      }
+
+      return updateLoraProject(item, {
+        name: elements.loraProjectNameInput.value.trim() || item.name,
+        purpose: elements.loraPurposeInput.value.trim(),
+        baseModel: elements.loraBaseModelInput.value.trim() || item.baseModel,
+        targetCount: elements.loraTargetCountInput.value,
+      });
+    }),
+    loraTemplates: state.loraTemplates.map((item) => {
+      if (item.id !== template.id) {
+        return item;
+      }
+
+      return updateLoraTemplate(item, {
+        name: elements.loraTemplateNameInput.value.trim() || item.name,
+        systemPrompt: elements.loraSystemPromptInput.value.trim(),
+        userFormat: elements.loraUserFormatInput.value.trim(),
+        outputFormat: elements.loraOutputFormatInput.value.trim(),
+        forbidden: elements.loraForbiddenInput.value.trim(),
+        checklist: elements.loraChecklistInput.value.trim(),
+        exampleSeed: elements.loraExampleSeedInput.value.trim(),
+      });
+    }),
+  };
+  persistAndRender();
+});
+
+elements.saveLoraCandidateButton.addEventListener("click", () => {
+  const project = getActiveLoraProject();
+  const template = getActiveLoraTemplate(project);
+  const userInput = elements.loraCandidateUserInput.value.trim();
+  const answer = elements.loraCandidateAnswerInput.value.trim();
+
+  if (!project || !template) {
+    alert("먼저 LoRA 프로젝트를 만들어 주세요.");
+    return;
+  }
+
+  if (!userInput || !answer) {
+    alert("User 입력과 Assistant 출력이 모두 있어야 저장할 수 있습니다.");
+    return;
+  }
+
+  state = {
+    ...state,
+    dataset: [...state.dataset, createDatasetItemFromTemplate(project, template, userInput, answer)],
+  };
+  elements.loraCandidateUserInput.value = "";
+  elements.loraCandidateAnswerInput.value = "";
+  persistAndRender();
+});
+
+elements.exportLoraProjectButton.addEventListener("click", () => {
+  const project = getActiveLoraProject();
+
+  if (!project) {
+    return;
+  }
+
+  const projectDataset = getProjectDataset(state.dataset, project.id);
+
+  if (projectDataset.length === 0) {
+    alert("선택한 프로젝트에 export할 데이터 후보가 없습니다.");
+    return;
+  }
+
+  downloadTextFile(`${project.name.replace(/[\\/:*?"<>|]/g, "-")}.jsonl`, toJsonl(projectDataset));
 });
 
 elements.exportButton.addEventListener("click", () => {

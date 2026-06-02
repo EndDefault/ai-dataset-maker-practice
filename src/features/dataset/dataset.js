@@ -45,6 +45,36 @@ export function createDatasetItemFromParts(profile, systemPrompt, userInput, ass
   };
 }
 
+export function createDatasetItemFromTemplate(project, template, userInput, assistantOutput) {
+  return {
+    id: crypto.randomUUID(),
+    profileId: null,
+    profileName: project.name,
+    loraProjectId: project.id,
+    loraTemplateId: template.id,
+    loraProjectName: project.name,
+    reviewStatus: "draft",
+    source: "lora-template",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    evaluation: null,
+    messages: [
+      {
+        role: "system",
+        content: template.systemPrompt,
+      },
+      {
+        role: "user",
+        content: userInput,
+      },
+      {
+        role: "assistant",
+        content: assistantOutput,
+      },
+    ],
+  };
+}
+
 export function createFailureItem(profile, userMessage, assistantMessage, reason) {
   return {
     id: crypto.randomUUID(),

@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+data/app-state.json
+training/data/
+training/output/
+training/models/
+training/runs/
+*.log

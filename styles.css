@@ -169,6 +169,7 @@ pre {
 .profile-list,
 .memory-list,
 .dataset-list,
+.project-list,
 .stack {
   display: grid;
   gap: 10px;
@@ -176,14 +177,16 @@ pre {
 
 .profile-item,
 .memory-item,
-.dataset-item {
+.dataset-item,
+.project-item {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   padding: 12px;
 }
 
-.profile-item {
+.profile-item,
+.project-item {
   display: grid;
   gap: 5px;
   text-align: left;
@@ -191,21 +194,24 @@ pre {
   min-height: 68px;
 }
 
-.profile-item.active {
+.profile-item.active,
+.project-item.active {
   border-color: var(--accent);
   background: #eaf4f2;
 }
 
 .profile-item strong,
 .memory-item strong,
-.dataset-item strong {
+.dataset-item strong,
+.project-item strong {
   display: block;
   font-size: 14px;
 }
 
 .profile-item span,
 .memory-item span,
-.dataset-item span {
+.dataset-item span,
+.project-item span {
   color: var(--muted);
   font-size: 12px;
 }
@@ -311,7 +317,7 @@ pre {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   margin-bottom: 16px;
 }
@@ -363,13 +369,36 @@ pre {
   margin-top: 20px;
 }
 
+.lora-header,
+.lora-editor,
+.lora-summary {
+  margin-top: 16px;
+}
+
+.lora-summary {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--muted);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lora-summary strong {
+  color: var(--text);
+}
+
 .message.error {
   border-color: #d99a7a;
   background: #fff4ee;
 }
 
 .memory-item,
-.dataset-item {
+.dataset-item,
+.project-item {
   display: grid;
   gap: 8px;
 }
