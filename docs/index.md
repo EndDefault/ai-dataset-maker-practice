@@ -1,40 +1,41 @@
 # 문서 목록
 
-이 프로젝트는 docs-first 방식으로 진행한다. 구현 전에 목표, 범위, 번역 작업 구조, 이미지 OCR 흐름, 평가 기준을 문서로 먼저 고정한다.
+이 프로젝트는 docs-first 방식으로 진행한다. 지금은 큰 확장 기능보다 MVP를 완성하는 것이 우선이다.
+
+목표는 단순 챗봇이 아니라, 실제 파일을 읽고 결과를 Markdown으로 저장하는 **로컬 작업 수행형 AI 비서**를 만드는 것이다.
 
 ## 핵심 문서
 
 | 문서 | 용도 |
 | --- | --- |
 | `project-status.md` | 현재 상태와 다음 작업 요약 |
-| `planning/vision.md` | 프로젝트 정의와 최종 목표 |
-| `planning/requirements.md` | 사용자 시나리오와 요구사항 |
-| `planning/roadmap.md` | MVP부터 확장까지 개발 순서 |
-| `planning/checklist.md` | 단계별 체크리스트 |
-| `planning/decision_log.md` | 중요한 결정과 이유 |
-| `design/architecture.md` | 전체 시스템 구조 |
-| `design/data_model.md` | 번역 작업 JSON, OCR 상태값, 번역 상태값 |
-| `design/ui_flow.md` | 화면 흐름 |
-| `design/translation_pipeline.md` | 텍스트/이미지 번역 흐름 |
-| `design/rag_design.md` | RAG 참고 자료 설계 |
-| `development/setup.md` | 설치와 실행 방법 |
-| `development/command_guide.md` | Windows cmd 기준 명령어 |
-| `development/commit_convention.md` | 커밋 규칙 |
-| `development/dataset_rules.md` | 데이터 제작과 검수 규칙 |
-| `testing/test_plan.md` | 테스트 전략 |
-| `testing/test_result.md` | 테스트 결과 기록 |
-| `testing/evaluation_criteria.md` | 데이터와 모델 평가 기준 |
-| `logs/implementation_log.md` | 구현 기록 |
-| `logs/experiment_log.md` | OCR/번역 실험 기록 |
-| `logs/bugfix_log.md` | 버그 수정 기록 |
-| `reference/glossary.md` | 용어 정리 |
-| `reference/translation_ai_notes.md` | AI 번역 구성 노트 |
+| `requirements.md` | 만들 기능과 MVP 범위 |
+| `architecture.md` | 전체 구조와 처리 흐름 |
+| `checklist.md` | 단계별 작업 체크리스트 |
+| `command_guide.md` | Windows cmd 기준 실행 명령어 |
+| `commit_convention.md` | 계속 사용할 커밋 규칙 |
+| `implementation_log.md` | 구현 기록 |
 
 ## 갱신 규칙
 
-- 기능을 만들기 전에는 관련 `planning` 또는 `design` 문서를 먼저 확인한다.
-- 기능을 만든 뒤에는 `project-status.md`, `planning/checklist.md`, `logs/implementation_log.md`를 갱신한다.
-- 데이터 구조를 바꾸면 `design/data_model.md`와 `testing/test_plan.md`를 갱신한다.
-- OCR이나 번역 실험을 하면 `logs/experiment_log.md`와 `testing/evaluation_criteria.md`를 갱신한다.
-- 버그를 고치면 `logs/bugfix_log.md`에 재현 조건과 수정 내용을 남긴다.
-- 명령어 문서는 Windows `cmd` 기준으로 작성한다.
+- 기능을 만들기 전에는 `requirements.md`와 `checklist.md`를 먼저 확인한다.
+- 구조가 바뀌면 `architecture.md`를 갱신한다.
+- 구현이 끝나면 `project-status.md`, `checklist.md`, `implementation_log.md`를 갱신한다.
+- 실행 명령이 바뀌면 `command_guide.md`를 갱신한다.
+- 모든 명령어 예시는 Windows `cmd` 기준으로 작성한다.
+- PowerShell 전용 명령어를 기본 문서에 쓰지 않는다.
+
+## 확장 문서 규칙
+
+처음부터 문서를 많이 만들지 않는다.
+
+기능이 커질 때만 새 문서를 추가한다.
+
+예시:
+
+```txt
+PDF 기능이 커지면 docs/pdf.md 추가
+OCR 기능이 커지면 docs/ocr.md 추가
+RAG 기능이 커지면 docs/rag.md 추가
+음성 기능이 커지면 docs/voice.md 추가
+```
