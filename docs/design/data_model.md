@@ -1,50 +1,46 @@
 # 데이터 모델
 
-## Training Project
+## Translation Job
+
+텍스트 입력 또는 이미지 영역 하나를 번역하는 작업 단위다.
 
 ```json
 {
-  "id": "project-001",
-  "name": "nabi-tone",
-  "purpose": "짧고 자연스러운 냥체 답변 습관을 학습한다.",
-  "baseModel": "Qwen/Qwen2.5-0.5B-Instruct",
-  "targetCount": 100,
-  "createdAt": "",
-  "updatedAt": ""
-}
-```
-
-## Dataset Candidate
-
-```json
-{
-  "id": "candidate-001",
-  "projectId": "project-001",
-  "status": "draft",
-  "stage": "generated",
-  "input": {
-    "topic": "LoRA가 필요한 이유",
-    "facts": [
-      "프롬프트 참고만으로 모델 자체가 바뀌지는 않는다.",
-      "LoRA는 말투와 출력 습관 조정에 적합하다."
-    ],
-    "intent": "초보자에게 짧게 설명"
+  "id": "job-001",
+  "sourceType": "image",
+  "status": "normalized",
+  "source": {
+    "language": "en",
+    "text": "I didn't say it was easy."
   },
-  "output": {
-    "system": "너는 짧고 자연스러운 냥체 답변 데이터를 만든다.",
-    "user": "LoRA가 왜 필요해?",
-    "assistant": "프롬프트만으로는 모델 습관이 바뀌지 않는다냥. LoRA는 말투나 답변 형식을 모델에 더 가깝게 익히게 할 때 쓴다냥."
+  "ocr": {
+    "enabled": true,
+    "engine": "paddleocr",
+    "rawText": "I didn't say it was easy.",
+    "correctedText": "I didn't say it was easy.",
+    "confidence": 0.91,
+    "reviewed": true
   },
-  "checks": {
-    "jsonValid": true,
-    "requiredFieldsPassed": true,
-    "forbiddenWordsPassed": true,
-    "sentenceCountPassed": true,
-    "messagesPassed": true
+  "image": {
+    "imageId": "image-001",
+    "imagePath": "data/images/page-001.png",
+    "regionId": "region-001",
+    "box": {
+      "x": 120,
+      "y": 80,
+      "width": 340,
+      "height": 90
+    },
+    "cropPath": "data/crops/page-001-region-001.png"
   },
-  "issues": [],
+  "translation": {
+    "draft": "나는 그게 쉽다고 말하지 않았다.",
+    "normalized": "쉽다고 한 적은 없어.",
+    "final": "쉽다고 한 적은 없어.",
+    "reviewed": false
+  },
+  "references": [],
   "metadata": {
-    "source": "manual",
     "createdAt": "",
     "updatedAt": ""
   }
@@ -55,25 +51,38 @@
 
 | 상태 | 의미 |
 | --- | --- |
-| `draft` | 생성됨 |
-| `checked` | 코드 검사 통과 |
-| `needs_revision` | 수정 필요 |
-| `revised` | 수정 완료 |
-| `polished` | 다듬기 완료 |
-| `reviewed` | 사람이 학습 데이터로 승인 |
+| `created` | 작업 생성 |
+| `region_created` | 이미지 영역 지정 완료 |
+| `ocr_done` | OCR 추출 완료 |
+| `ocr_reviewed` | OCR 결과 검수 완료 |
+| `translated` | 초벌 번역 완료 |
+| `normalized` | 자연스러운 한국어 정규화 완료 |
+| `translation_reviewed` | 최종 번역 검수 완료 |
 | `rejected` | 사용하지 않음 |
 
-## 학습용 JSONL
+## 이미지 영역
 
-최종 학습 파일은 `reviewed` 후보만 아래 구조로 export한다.
+이미지 전체를 OCR하지 않고 사용자가 번역할 영역을 직접 지정한다.
 
 ```json
-{"messages":[{"role":"system","content":""},{"role":"user","content":""},{"role":"assistant","content":""}]}
+{
+  "id": "region-001",
+  "imageId": "image-001",
+  "box": {
+    "x": 120,
+    "y": 80,
+    "width": 340,
+    "height": 90
+  },
+  "cropPath": "data/crops/page-001-region-001.png",
+  "status": "ocr_done"
+}
 ```
 
 ## 저장 원칙
 
-- 후보 데이터는 내부 관리용 JSON으로 저장한다.
-- 학습에는 JSONL export 결과만 사용한다.
-- 검사 결과와 이슈는 후보 JSON에 남긴다.
-- 대용량 모델 파일과 adapter는 Git에 넣지 않는다.
+- 원본 이미지와 crop 이미지는 파일로 저장하고 JSON에는 경로를 남긴다.
+- OCR 결과는 `rawText`와 `correctedText`를 분리한다.
+- 번역 결과는 `draft`, `normalized`, `final`을 분리한다.
+- 데이터셋 생성과 JSONL export는 MVP 범위가 아니다.
+- 나중에 필요하면 사람이 검수한 번역 기록을 별도 export 기능으로 확장한다.

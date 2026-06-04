@@ -6,9 +6,9 @@
 UI
 → Local API
 → File Storage
-→ Dataset Pipeline
-→ Training Pipeline
-→ Experiment Lab
+→ Image/OCR Pipeline
+→ Translation Pipeline
+→ Review Workspace
 → Reference Library
 ```
 
@@ -16,32 +16,31 @@ UI
 
 | 영역 | 역할 |
 | --- | --- |
-| UI | 데이터 후보, 검사 결과, 학습 결과를 조작 |
-| Local API | 파일 저장, 검사, 학습 스크립트 실행 연결 |
-| File Storage | 프로젝트, 후보 데이터, 실험 로그 저장 |
-| Dataset Pipeline | 생성, 검사, 수정, 다듬기, 승인 |
-| Training Pipeline | JSONL 검증, LoRA 학습, adapter 저장 |
-| Experiment Lab | 원본 모델과 학습 모델 비교 |
-| Reference Library | RAG용 참고 문서 저장과 검색 |
+| UI | 원문, OCR 결과, 번역 결과, 상태를 조작 |
+| Local API | 파일 저장, OCR 실행, 번역 요청 연결 |
+| File Storage | 원본 이미지, crop 이미지, 번역 작업 JSON 저장 |
+| Image/OCR Pipeline | 영역 지정, crop 저장, OCR 추출, OCR 검수 |
+| Translation Pipeline | 초벌 번역, 정규화, 최종 번역 검수 |
+| Review Workspace | OCR과 번역 상태 확인, 수정, 승인 |
+| Reference Library | 용어집, 이전 번역, 문체 규칙 검색 |
 
 ## 기본 데이터 흐름
 
 ```txt
-프로젝트 정의
-→ 데이터 후보 JSON
-→ 코드 검사
-→ 사람 검수
-→ reviewed JSONL export
-→ PyTorch/PEFT LoRA 학습
-→ adapter 저장
-→ 원본 모델과 비교
-→ 실험 로그 기록
+텍스트 입력 또는 이미지 업로드
+→ 이미지라면 영역 지정과 crop 저장
+→ OCR 텍스트 추출
+→ OCR 결과 수정과 승인
+→ 초벌 번역
+→ 정규화 번역
+→ 최종 번역 수정과 승인
+→ 번역 작업 JSON 저장
 ```
 
 ## 우선순위
 
-1. 데이터 후보 구조와 저장
-2. 코드 검사와 reviewed export
-3. LoRA 학습 스크립트
-4. 실험 비교
+1. 텍스트 번역 작업 구조와 저장
+2. 번역 상태값 관리
+3. 이미지 영역 지정과 crop 저장
+4. PaddleOCR 연동
 5. RAG 참고 자료 연결

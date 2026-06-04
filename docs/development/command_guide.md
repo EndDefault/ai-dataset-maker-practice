@@ -26,10 +26,9 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 학습 스크립트 후보
+## OCR/번역 스크립트 후보
 
 ```cmd
-python training\validate_jsonl.py data\dataset.jsonl
-python training\train_lora.py --dataset data\dataset.jsonl
-python training\compare_lora.py --adapter training\output\adapter
+python ocr\extract_region_text.py data\crops\region-001.png
+node --check src\index.js
 ```

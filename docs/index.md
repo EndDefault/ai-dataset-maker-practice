@@ -1,6 +1,6 @@
 # 문서 목록
 
-이 프로젝트는 docs-first 방식으로 진행한다. 구현 전에 목표, 범위, 데이터 구조, 학습 흐름, 평가 기준을 문서로 먼저 고정한다.
+이 프로젝트는 docs-first 방식으로 진행한다. 구현 전에 목표, 범위, 번역 작업 구조, 이미지 OCR 흐름, 평가 기준을 문서로 먼저 고정한다.
 
 ## 핵심 문서
 
@@ -13,9 +13,9 @@
 | `planning/checklist.md` | 단계별 체크리스트 |
 | `planning/decision_log.md` | 중요한 결정과 이유 |
 | `design/architecture.md` | 전체 시스템 구조 |
-| `design/data_model.md` | JSON 후보, 상태값, JSONL 구조 |
+| `design/data_model.md` | 번역 작업 JSON, OCR 상태값, 번역 상태값 |
 | `design/ui_flow.md` | 화면 흐름 |
-| `design/training_pipeline.md` | PyTorch/PEFT 학습 흐름 |
+| `design/translation_pipeline.md` | 텍스트/이미지 번역 흐름 |
 | `design/rag_design.md` | RAG 참고 자료 설계 |
 | `development/setup.md` | 설치와 실행 방법 |
 | `development/command_guide.md` | Windows cmd 기준 명령어 |
@@ -25,16 +25,16 @@
 | `testing/test_result.md` | 테스트 결과 기록 |
 | `testing/evaluation_criteria.md` | 데이터와 모델 평가 기준 |
 | `logs/implementation_log.md` | 구현 기록 |
-| `logs/experiment_log.md` | 학습 실험 기록 |
+| `logs/experiment_log.md` | OCR/번역 실험 기록 |
 | `logs/bugfix_log.md` | 버그 수정 기록 |
 | `reference/glossary.md` | 용어 정리 |
-| `reference/ai_learning_notes.md` | AI 학습 개념 노트 |
+| `reference/translation_ai_notes.md` | AI 번역 구성 노트 |
 
 ## 갱신 규칙
 
 - 기능을 만들기 전에는 관련 `planning` 또는 `design` 문서를 먼저 확인한다.
 - 기능을 만든 뒤에는 `project-status.md`, `planning/checklist.md`, `logs/implementation_log.md`를 갱신한다.
 - 데이터 구조를 바꾸면 `design/data_model.md`와 `testing/test_plan.md`를 갱신한다.
-- 학습 실험을 하면 `logs/experiment_log.md`와 `testing/evaluation_criteria.md`를 갱신한다.
+- OCR이나 번역 실험을 하면 `logs/experiment_log.md`와 `testing/evaluation_criteria.md`를 갱신한다.
 - 버그를 고치면 `logs/bugfix_log.md`에 재현 조건과 수정 내용을 남긴다.
 - 명령어 문서는 Windows `cmd` 기준으로 작성한다.

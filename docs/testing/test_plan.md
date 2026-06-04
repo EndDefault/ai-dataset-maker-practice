@@ -5,22 +5,21 @@
 - JSON 구조 검증
 - 필수 필드 검증
 - 상태값 변경 검증
-- JSONL export 검증
-- 학습 스크립트 입력 검증
+- 번역 작업 저장 검증
+- 이미지 crop 경로 검증
 - UI 주요 흐름 검증
 
 ## 기본 테스트 케이스
 
-- [ ] 빈 데이터는 저장되지 않는다.
+- [ ] 빈 원문은 저장되지 않는다.
 - [ ] 필수 필드가 없으면 검사 실패한다.
 - [ ] 잘못된 상태값은 거부된다.
-- [ ] `reviewed` 데이터만 export된다.
-- [ ] JSONL 한 줄은 `messages` 배열을 가진다.
-- [ ] 학습 스크립트는 잘못된 JSONL을 거부한다.
+- [ ] 이미지 작업은 crop 경로가 있어야 한다.
+- [ ] OCR 결과가 비어 있으면 번역 단계로 넘어가지 않는다.
+- [ ] 최종 번역이 비어 있으면 승인할 수 없다.
 
 ## 검증 명령 후보
 
 ```cmd
 node --check src\index.js
-python training\validate_jsonl.py data\dataset.jsonl
 ```
