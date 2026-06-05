@@ -3,6 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from src.schemas import TaskStatus
+from src.ui.shared.markdown import strip_frontmatter
 from src.ui.shared.messages import NO_RESULT
 
 
@@ -23,4 +24,4 @@ def render_result_preview() -> None:
     if result.error_path:
         st.caption(f"Error JSON: {result.error_path}")
 
-    st.markdown(result.markdown)
+    st.markdown(strip_frontmatter(result.markdown))

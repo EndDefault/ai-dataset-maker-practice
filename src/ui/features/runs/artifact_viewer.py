@@ -5,6 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from src.storage.sqlite_store import list_artifacts
+from src.ui.shared.markdown import strip_frontmatter
 
 
 def render_artifact_viewer(run_id: str) -> None:
@@ -19,7 +20,7 @@ def render_artifact_viewer(run_id: str) -> None:
         with st.expander(f"{artifact['kind']} / {path.name}", expanded=artifact["kind"] == "markdown"):
             st.caption(str(path))
             if path.exists() and path.suffix == ".md":
-                st.markdown(path.read_text(encoding="utf-8"))
+                st.markdown(strip_frontmatter(path.read_text(encoding="utf-8")))
             elif path.exists():
                 st.code(path.read_text(encoding="utf-8"), language="json")
             else:
