@@ -10,7 +10,7 @@
 
 아직 초기 구현 기능을 확정하지 않는다. 먼저 로컬 작업 비서의 기본 실행 구조, 입출력 방식, 저장 방식, 실패 처리 방식, RAG 기반을 정리한다.
 
-초기 기능 후보는 txt/md 문서 요약, 문서 검색, 에러 메시지 분석, RAG 기반 질의응답이다.
+초기 기능 후보는 txt/md/pdf 문서 요약, 문서 검색, 에러 메시지 분석, RAG 기반 질의응답이다.
 
 ## 현재 합의된 로컬 기준
 
@@ -50,6 +50,6 @@ http://127.0.0.1:8501
 현재 첫 사이트 버전은 Streamlit 작업 콘솔이다.
 
 - Home: 자연어 명령 실행과 Markdown 결과 미리보기
-- Documents: txt/md 업로드, 문서 목록, chunk 미리보기
+- Documents: txt/md/pdf 업로드, 문서 목록, chunk 미리보기
 - Runs: 실행 기록, Markdown 산출물, error.json 확인
 - Settings: Ollama 모델, SQLite DB, 경로 상태 확인

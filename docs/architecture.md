@@ -105,8 +105,8 @@ docs/
 | `ui/shared/*` | 공통 레이아웃, 네비게이션, 상태, 컴포넌트 |
 | `ollama_client.py` | Ollama 로컬 LLM 호출 |
 | `io_cleaner.py` | 사용자 입력을 정규화된 작업 JSON으로 변환 |
-| `summarize.py` | txt/md 파일 요약 |
-| `search.py` | txt/md 파일 키워드 검색 |
+| `summarize.py` | txt/md/pdf 파일 요약 |
+| `search.py` | txt/md/pdf 파일 키워드 검색 |
 | `explain_error.py` | 에러 메시지 분석 |
 | `rag_search.py` | RAG 기반 질의응답 |
 | `chunker.py` | 문서를 검색 가능한 chunk로 분리 |

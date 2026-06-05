@@ -86,3 +86,25 @@
 - `qwen3:4b` 기반 입출력 정제 AI 연결
 - 기술 스택 입력 UI 보강
 - Streamlit 화면 브라우저 시각 검증
+
+## 2026-06-06 PDF 문서 입력 지원
+
+변경 내용:
+
+- 문서 로더가 `.pdf` 파일을 수집하도록 확장했다.
+- `pypdf`를 사용해 텍스트 기반 PDF 내용을 추출한다.
+- 업로드 UI와 문서 목록 안내 문구를 txt/md/pdf 기준으로 바꿨다.
+- 요약, 검색, RAG 질의응답이 PDF 텍스트를 같은 chunk 흐름으로 사용할 수 있게 했다.
+
+제한:
+
+- 스캔 이미지 PDF는 아직 처리하지 않는다.
+- 텍스트 추출이 되지 않는 PDF는 OCR 단계가 필요하다.
+- PPT/PPTX는 아직 지원하지 않는다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- 임시 PDF 생성 후 `read_document_file()` 텍스트 추출 확인
+- 지원 확장자 확인: `.txt`, `.md`, `.pdf`
+- Streamlit 서버 응답 확인: `http://127.0.0.1:8501` HTTP 200

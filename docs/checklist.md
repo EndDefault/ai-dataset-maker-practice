@@ -64,17 +64,18 @@
 - [x] RAG 질의응답 함수 연결
 - [x] 알 수 없는 명령 안내
 
-## Phase 6. txt/md 파일 요약 후보
+## Phase 6. txt/md/pdf 파일 요약 후보
 
 - [x] uploads 폴더 생성
 - [x] txt/md 파일 읽기
+- [x] PDF 텍스트 추출
 - [x] `qwen3:14b`에 요약 요청
 - [x] 요약 결과 출력
 - [x] 실행 ID 기준 Markdown 저장
 
 ## Phase 7. 파일 검색 후보
 
-- [x] txt/md 파일 탐색
+- [x] txt/md/pdf 파일 탐색
 - [ ] 키워드 추출
 - [x] 관련 문단 검색
 - [x] 검색 결과 정리
