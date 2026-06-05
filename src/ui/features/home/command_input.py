@@ -14,16 +14,16 @@ def render_input_file_picker() -> list[str]:
     uploaded_files = collect_text_files([config.uploads_dir])
     selected_paths: list[str] = st.session_state.setdefault("selected_input_paths", [])
 
-    st.markdown('<div class="section-label">입력 파일</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">이번 작업에 사용할 파일</div>', unsafe_allow_html=True)
     if not uploaded_files:
         st.info("Documents 페이지에서 txt, md, pdf 파일을 먼저 업로드해 주세요.")
         return []
 
     file_options = {file_path.name: str(file_path) for file_path in uploaded_files}
-    selected_name = st.selectbox("업로드한 파일", list(file_options.keys()))
+    selected_name = st.selectbox("업로드한 파일에서 선택", list(file_options.keys()))
     add_left, add_right = st.columns([0.45, 0.55])
     with add_left:
-        if st.button("추가", use_container_width=True):
+        if st.button("입력 파일 추가", use_container_width=True):
             selected_path = file_options[selected_name]
             if selected_path not in selected_paths:
                 selected_paths.append(selected_path)
@@ -38,14 +38,14 @@ def render_input_file_picker() -> list[str]:
         st.warning("아직 선택한 입력 파일이 없습니다.")
         return []
 
-    st.write("선택한 입력 파일")
+    st.write("이번 작업 입력 목록")
     for index, path_text in enumerate(list(selected_paths)):
         path = Path(path_text)
         col_name, col_delete = st.columns([0.75, 0.25])
         with col_name:
             st.caption(path.name)
         with col_delete:
-            if st.button("삭제", key=f"remove_input_{index}_{path.name}", use_container_width=True):
+            if st.button("선택 해제", key=f"remove_input_{index}_{path.name}", use_container_width=True):
                 selected_paths.remove(path_text)
                 st.session_state["selected_input_paths"] = selected_paths
                 st.rerun()

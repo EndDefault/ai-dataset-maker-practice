@@ -21,6 +21,12 @@ def render_document_table() -> None:
         st.info("아직 업로드된 txt, md, pdf 문서가 없습니다.")
         return
 
+    header_name, header_size, header_modified, header_delete = st.columns([0.34, 0.16, 0.34, 0.16])
+    header_name.caption("파일")
+    header_size.caption("크기")
+    header_modified.caption("수정 시간")
+    header_delete.caption("관리")
+
     for file_path in files:
         stat = file_path.stat()
         col_name, col_size, col_modified, col_delete = st.columns([0.34, 0.16, 0.34, 0.16])
@@ -32,7 +38,7 @@ def render_document_table() -> None:
         with col_modified:
             st.write(datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"))
         with col_delete:
-            if st.button("삭제", key=f"delete_doc_{file_path.name}", use_container_width=True):
+            if st.button("파일 삭제", key=f"delete_doc_{file_path.name}", use_container_width=True):
                 remove_document_file(file_path)
                 st.rerun()
 
