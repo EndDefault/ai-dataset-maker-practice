@@ -1,1 +1,55 @@
-# ai-dataset-maker-practice
+# Local AI Task Assistant
+
+클라우드 API 비용 부담 없이 로컬 환경에서 동작하는 작업 수행형 AI 비서다.
+
+사용자가 자연어로 명령을 입력하면 AI 비서가 명령 의도를 파악하고, 문서 요약, 파일 검색, 코드 오류 분석 같은 반복 작업을 수행한 뒤 결과를 보기 쉬운 Markdown 형태로 제공한다.
+
+## 현재 단계
+
+이 저장소는 docs-first 방식으로 다시 시작한다.
+
+아직 초기 구현 기능을 확정하지 않는다. 먼저 로컬 작업 비서의 기본 실행 구조, 입출력 방식, 저장 방식, 실패 처리 방식, RAG 기반을 정리한다.
+
+초기 기능 후보는 txt/md/pdf 문서 요약, 문서 검색, 에러 메시지 분석, RAG 기반 질의응답이다.
+
+## 현재 합의된 로컬 기준
+
+- GPU 기준: RTX 5060 Ti 16GB
+- 메인 응답 모델: `qwen3:14b`
+- 입출력 정제 모델: `qwen3:4b`
+- 임베딩 모델: `bge-m3`
+- DB: SQLite
+- 벡터 검색 후보: `sqlite-vec`
+- Python 실행: 프로젝트 가상환경 `.venv`
+
+## 중요한 개발 규칙
+
+이 프로젝트의 명령어와 문서는 **Windows cmd 기준**으로 작성한다.
+
+PowerShell 전용 명령어를 기본 실행 방법으로 쓰지 않는다.
+
+## 문서
+
+시작점은 [docs/index.md](docs/index.md)다.
+
+## 실행 방법
+
+Windows `cmd` 기준:
+
+```cmd
+.venv\Scripts\activate
+streamlit run app.py
+```
+
+브라우저에서 아래 주소를 연다.
+
+```txt
+http://127.0.0.1:8501
+```
+
+현재 첫 사이트 버전은 Streamlit 작업 콘솔이다.
+
+- Home: 자연어 명령 실행과 Markdown 결과 미리보기
+- Documents: txt/md/pdf 업로드, 문서 목록, chunk 미리보기
+- Runs: 실행 기록, Markdown 산출물, error.json 확인
+- Settings: Ollama 모델, SQLite DB, 경로 상태 확인
