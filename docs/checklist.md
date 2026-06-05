@@ -67,7 +67,7 @@
 ## Phase 6. txt/md/pdf 파일 요약 후보
 
 - [x] uploads 폴더 생성
-- [x] txt/md 파일 읽기
+- [x] txt/md/pdf 파일 읽기
 - [x] PDF 텍스트 추출
 - [x] `qwen3:14b`에 요약 요청
 - [x] 요약 결과 출력
