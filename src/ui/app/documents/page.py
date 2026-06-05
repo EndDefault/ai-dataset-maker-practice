@@ -10,7 +10,7 @@ from src.ui.shared.layout import render_page_header
 
 
 def render() -> None:
-    render_page_header("문서", "업로드된 txt/md/pdf 문서와 검색 단위 chunk 상태를 확인합니다.")
+    render_page_header("문서", "업로드된 txt, md, pdf 문서와 검색 단위 chunk 상태를 확인합니다.")
     top_left, top_right = st.columns([0.45, 0.55], gap="large")
     with top_left:
         render_upload_panel()

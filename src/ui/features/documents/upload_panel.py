@@ -9,7 +9,8 @@ from src.storage.sqlite_store import upsert_document
 def render_upload_panel() -> None:
     config = get_config()
     st.markdown('<div class="section-label">문서 업로드</div>', unsafe_allow_html=True)
-    uploaded_files = st.file_uploader("txt/md/pdf 파일", type=["txt", "md", "pdf"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("txt / md / pdf 파일", type=["txt", "md", "pdf"], accept_multiple_files=True)
+    st.caption("텍스트 기반 PDF를 지원합니다. 스캔 이미지 PDF는 OCR 단계가 필요합니다.")
     if not uploaded_files:
         return
 
