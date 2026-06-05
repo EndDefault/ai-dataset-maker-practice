@@ -56,3 +56,33 @@
 - UI 폴더 구조 생성
 - 작업 JSON schema 작성
 - 입출력 정제 흐름 구현
+
+## 2026-06-06 Streamlit 사이트 첫 버전 구현
+
+변경 내용:
+
+- `app.py` Streamlit 진입점을 만들었다.
+- `src/ui/app`, `src/ui/features`, `src/ui/shared` 구조로 Home, Documents, Runs, Settings 페이지를 만들었다.
+- 사용자 명령을 작업 JSON으로 바꾸는 기본 정규화와 schema 검증을 추가했다.
+- 요약, 검색, 에러 분석, RAG 질의응답 후보 작업을 연결했다.
+- Ollama 호출을 위한 `ollama_client.py`를 추가했다.
+- Ollama가 느리거나 사용할 수 없을 때도 앱이 죽지 않도록 fallback 응답을 넣었다.
+- SQLite 테이블 생성, 실행 기록, 산출물, 오류 기록 저장을 연결했다.
+- Markdown 결과와 `error.json` 파일을 실행 ID 기준으로 저장한다.
+- `requirements.txt`와 기본 디렉터리 `data`, `uploads`, `outputs`를 추가했다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- `streamlit --version` 확인: 1.58.0
+- 앱 import와 SQLite 초기화 확인
+- 로컬 실패 처리 경로 확인: `MISSING_FILE` 오류가 Markdown과 SQLite에 기록됨
+- Streamlit 서버 응답 확인: `http://127.0.0.1:8501` HTTP 200
+
+남은 작업:
+
+- `sqlite-vec` 실제 로드 테스트와 벡터 검색 연결
+- `bge-m3` embedding 저장
+- `qwen3:4b` 기반 입출력 정제 AI 연결
+- 기술 스택 입력 UI 보강
+- Streamlit 화면 브라우저 시각 검증

@@ -31,3 +31,25 @@ PowerShell 전용 명령어를 기본 실행 방법으로 쓰지 않는다.
 ## 문서
 
 시작점은 [docs/index.md](docs/index.md)다.
+
+## 실행 방법
+
+Windows `cmd` 기준:
+
+```cmd
+.venv\Scripts\activate
+streamlit run app.py
+```
+
+브라우저에서 아래 주소를 연다.
+
+```txt
+http://127.0.0.1:8501
+```
+
+현재 첫 사이트 버전은 Streamlit 작업 콘솔이다.
+
+- Home: 자연어 명령 실행과 Markdown 결과 미리보기
+- Documents: txt/md 업로드, 문서 목록, chunk 미리보기
+- Runs: 실행 기록, Markdown 산출물, error.json 확인
+- Settings: Ollama 모델, SQLite DB, 경로 상태 확인

@@ -26,17 +26,21 @@
 - [x] Python 가상환경 사용 방침 결정
 - [x] Streamlit UI 구조 초안 결정
 - [x] Next.js식 `app/페이지명/page.py`와 `features/페이지명/` 구조 반영
+- [x] Streamlit 사이트 첫 버전 구현
+- [x] SQLite 실행 기록과 Markdown/error 파일 저장 연결
+- [x] Home, Documents, Runs, Settings 페이지 생성
+- [x] `sqlite-vec` 로드 테스트 확인
 
 ## 진행 중
 
-- [ ] 기본 폴더 구조 결정
-- [ ] SQLite와 `sqlite-vec` 사용 방식 검증
-- [ ] 입출력 작업 JSON schema 결정
+- [ ] SQLite와 `sqlite-vec` 실제 벡터 검색 연결
+- [ ] `qwen3:4b` 기반 입출력 정제 AI 연결
+- [ ] `bge-m3` 기반 embedding 생성과 벡터 검색 연결
 
 ## 다음 작업
 
-1. `.venv` 기준으로 `sqlite-vec` 설치와 로드 테스트를 한다.
-2. `requirements.txt`를 만든다.
-3. `architecture.md` 기준으로 기본 폴더 구조와 UI 폴더 구조를 만든다.
-4. 작업 JSON schema와 입출력 정제 흐름을 먼저 구현한다.
-5. 이후 후보 기능 중 가장 작은 작업부터 구현한다.
+1. `sqlite-vec` 로드 테스트와 실제 벡터 검색 저장소를 연결한다.
+2. `bge-m3` embedding 생성 결과를 SQLite에 저장한다.
+3. `qwen3:4b`를 이용한 입력 정제 JSON 생성을 연결한다.
+4. 문서 업로드 후 자동 chunk/index 흐름을 만든다.
+5. UI에서 기술 스택 입력과 모델 timeout 설정을 조정할 수 있게 한다.
