@@ -17,7 +17,7 @@ def render_document_table() -> None:
         upsert_document(file_path)
 
     if not files:
-        st.info("아직 업로드된 txt/md 문서가 없습니다.")
+        st.info("아직 업로드된 txt/md/pdf 문서가 없습니다.")
         return
 
     rows = []

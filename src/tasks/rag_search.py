@@ -13,7 +13,7 @@ def run(request: TaskRequest):
     config = get_config()
     chunks = build_chunks(request.input_paths)
     if not chunks:
-        raise AppError(ErrorCode.MISSING_FILE, "RAG 검색에 사용할 txt/md 파일을 찾지 못했습니다.")
+        raise AppError(ErrorCode.MISSING_FILE, "RAG 검색에 사용할 txt/md/pdf 파일을 찾지 못했습니다.")
 
     hits = lexical_search(request.query, chunks, limit=6)
     if not hits:

@@ -12,7 +12,7 @@ def run(request: TaskRequest):
     config = get_config()
     documents = load_documents(request.input_paths)
     if not documents:
-        raise AppError(ErrorCode.MISSING_FILE, "요약할 txt/md 파일을 찾지 못했습니다.")
+        raise AppError(ErrorCode.MISSING_FILE, "요약할 txt/md/pdf 파일을 찾지 못했습니다.")
 
     combined = "\n\n".join(f"## {doc.path.name}\n{doc.content[:6000]}" for doc in documents[:5])
     prompt = f"""아래 문서를 한국어로 요약해 주세요.

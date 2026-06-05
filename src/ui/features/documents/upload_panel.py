@@ -9,7 +9,7 @@ from src.storage.sqlite_store import upsert_document
 def render_upload_panel() -> None:
     config = get_config()
     st.markdown('<div class="section-label">문서 업로드</div>', unsafe_allow_html=True)
-    uploaded_files = st.file_uploader("txt/md 파일", type=["txt", "md"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("txt/md/pdf 파일", type=["txt", "md", "pdf"], accept_multiple_files=True)
     if not uploaded_files:
         return
 

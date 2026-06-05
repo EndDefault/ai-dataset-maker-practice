@@ -10,7 +10,7 @@ from src.tasks.common import success_result
 def run(request: TaskRequest):
     chunks = build_chunks(request.input_paths)
     if not chunks:
-        raise AppError(ErrorCode.MISSING_FILE, "검색할 txt/md 파일을 찾지 못했습니다.")
+        raise AppError(ErrorCode.MISSING_FILE, "검색할 txt/md/pdf 파일을 찾지 못했습니다.")
 
     hits = lexical_search(request.query, chunks, limit=8)
     if not hits:
