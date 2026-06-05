@@ -152,6 +152,22 @@ def upsert_document(path: Path) -> None:
         )
 
 
+def delete_document(path: Path) -> None:
+    initialize_database()
+    with connect() as db:
+        document = db.execute("select id from documents where path = ?", (str(path),)).fetchone()
+        if not document:
+            return
+        document_id = document["id"]
+        chunk_rows = list(db.execute("select id from chunks where document_id = ?", (document_id,)))
+        chunk_ids = [row["id"] for row in chunk_rows]
+        if chunk_ids:
+            placeholders = ",".join("?" for _ in chunk_ids)
+            db.execute(f"delete from embeddings where chunk_id in ({placeholders})", chunk_ids)
+        db.execute("delete from chunks where document_id = ?", (document_id,))
+        db.execute("delete from documents where id = ?", (document_id,))
+
+
 def list_documents() -> list[sqlite3.Row]:
     initialize_database()
     with connect() as db:

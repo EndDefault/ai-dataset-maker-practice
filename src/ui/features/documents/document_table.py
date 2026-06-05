@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
 from src.config import get_config
 from src.rag.chunker import collect_text_files
-from src.storage.sqlite_store import upsert_document
+from src.storage.sqlite_store import delete_document, upsert_document
 
 
 def render_document_table() -> None:
@@ -20,15 +21,25 @@ def render_document_table() -> None:
         st.info("아직 업로드된 txt, md, pdf 문서가 없습니다.")
         return
 
-    rows = []
     for file_path in files:
         stat = file_path.stat()
-        rows.append(
-            {
-                "파일": file_path.name,
-                "크기(bytes)": stat.st_size,
-                "수정 시간": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                "경로": str(file_path),
-            }
-        )
-    st.dataframe(rows, use_container_width=True, hide_index=True)
+        col_name, col_size, col_modified, col_delete = st.columns([0.34, 0.16, 0.34, 0.16])
+        with col_name:
+            st.write(file_path.name)
+            st.caption(str(file_path))
+        with col_size:
+            st.write(f"{stat.st_size:,} bytes")
+        with col_modified:
+            st.write(datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"))
+        with col_delete:
+            if st.button("삭제", key=f"delete_doc_{file_path.name}", use_container_width=True):
+                remove_document_file(file_path)
+                st.rerun()
+
+
+def remove_document_file(file_path: Path) -> None:
+    selected_paths: list[str] = st.session_state.get("selected_input_paths", [])
+    st.session_state["selected_input_paths"] = [path for path in selected_paths if Path(path) != file_path]
+    delete_document(file_path)
+    if file_path.exists():
+        file_path.unlink()
