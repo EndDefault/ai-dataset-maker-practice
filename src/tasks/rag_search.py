@@ -54,7 +54,7 @@ def run(request: TaskRequest):
 
 {context}
 """
-    answer = append_missing_candidate_rows(answer, hits)
+    answer = append_missing_candidate_rows(answer, hits, request.query)
     if vector_error and search_mode == "lexical":
         answer = f"{answer}\n\n---\n\n참고: 벡터 검색을 사용할 수 없어 키워드 검색으로 대체했습니다. 원인: {vector_error}"
 
@@ -81,7 +81,6 @@ def format_context_hit(index: int, hit, query_terms: list[str]) -> str:
     excerpt = hit.chunk.content[:1200]
     section_text = hit.chunk.section_title or "없음"
     item_text = hit.chunk.item_title or "없음"
-    page_text = hit.chunk.page_number if hit.chunk.page_number is not None else ""
     return (
         f"[{index}] {hit.chunk.path.name} / chunk {hit.chunk.index}\n"
         f"candidate_id: C{index}\n"
@@ -89,7 +88,6 @@ def format_context_hit(index: int, hit, query_terms: list[str]) -> str:
         f"chunk type: {hit.chunk.chunk_type}\n"
         f"section: {section_text}\n"
         f"item: {item_text}\n"
-        f"page: {page_text}\n"
         f"질문 키워드 일치: {terms_text}\n"
         f"{excerpt}"
     )
@@ -152,17 +150,19 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
     allowed_files = "\n".join(f"- {name}" for name in source_file_names) if source_file_names else "- 문서에서 확인 안 됨"
     table_instruction = ""
     if wants_table(query):
-        table_instruction = """
+        table_columns = "항목 | 핵심 내용 | 근거 파일명 | 근거 chunk"
+        numeric_instruction = ""
+        if wants_numeric_column(query):
+            table_columns = "항목 | 핵심 내용 | 금액/수치 | 근거 파일명 | 근거 chunk"
+            numeric_instruction = "\n- 질문이 요구한 금액이나 수치는 같은 근거 안에서 확인되는 값만 씁니다."
+        table_instruction = f"""
 - 사용자가 표를 요청했으므로 반드시 Markdown 표로 답변합니다.
-- 표 컬럼은 `분야 | 예산 항목 | 지원 내용 | 금액 | 근거 파일명 | 근거 chunk`를 사용합니다.
+- 사용자가 컬럼명을 직접 지정하지 않았다면 `{table_columns}`를 기본 컬럼으로 사용합니다.
 - `근거 chunk`에는 `C1 / chunk 13`처럼 candidate_id와 chunk 번호를 함께 씁니다.
-- 문서 근거에 나온 candidate_id를 한 개도 빠뜨리지 않습니다.
-- 금액이 근거에 명확하지 않으면 `문서에서 확인 안 됨`이라고 씁니다.
-- 금액은 해당 예산 항목과 같은 문장 또는 바로 이어지는 설명에 나온 수치만 사용합니다.
-- 사용자가 증액 금액을 요청하면 `억원(+158 )`처럼 괄호 안에 `+`로 표시된 금액만 씁니다. 이 경우 `+158억원`처럼 정리합니다.
-- 인원, 개소 수, 지원 비율, 월 납입금, 대상 규모는 금액으로 쓰지 않습니다.
-- 다른 항목의 금액을 재사용하지 않습니다.
-- `근거 chunk`에는 문서 근거 줄의 `chunk N` 숫자만 씁니다. page 번호나 표 행번호를 쓰지 않습니다.
+- 문서 근거에서 확인되지 않는 값은 `문서에서 확인 안 됨`이라고 씁니다.
+- 다른 근거의 수치나 표현을 재사용하지 않습니다.
+- page 번호나 표 행번호를 근거 chunk로 쓰지 않습니다.
+{numeric_instruction}
 """
 
     return f"""아래 문서 근거만 사용해서 질문에 답해 주세요.
@@ -183,30 +183,30 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
 - 한국어로 답변합니다.
 - 질문 핵심 주제와 직접 관련된 항목만 포함합니다.
 - 질문 핵심 주제 중 하나라도 직접 관련되면 포함합니다. 모든 핵심 주제를 동시에 만족할 필요는 없습니다.
-- `저출생`에는 임산부, 산모 건강, 산후조리원, 산부인과, 아동 돌봄, 아이돌봄을 포함합니다.
-- 분야명은 질문 핵심 주제 표현을 그대로 사용합니다.
-- 질문과 무관한 예산 항목, 재정수지, 지역 SOC, 에너지, 의료 등은 근거에 있어도 제외합니다.
-- 제외된 항목 목록이나 참고 항목 목록은 작성하지 않습니다.
+- 사용자가 제외하라고 한 조건은 반드시 제외합니다.
+- 제외된 항목 목록이나 참고 항목 목록은 사용자가 요청한 경우에만 작성합니다.
 - 사용자가 `모두`라고 요청하면 문서 근거에서 확인되는 관련 항목을 빠뜨리지 않습니다.
 - 모든 행 또는 문단에는 근거 파일명과 chunk 번호를 함께 표시합니다.
 - 근거 파일명은 허용된 근거 파일명 중 하나를 그대로 복사합니다. 파일명을 요약하거나 바꾸지 않습니다.
 - 문서 근거에서 확인되지 않는 내용은 추측하지 말고 `문서에서 확인 안 됨`이라고 씁니다.
-- 여러 분야가 질문에 포함되어 있으면 분야별로 구분합니다.
+- 문서의 종류를 임의로 가정하지 않습니다.
+- 사고 과정이나 추론 과정을 쓰지 말고 최종 답변만 작성합니다.
 {table_instruction}"""
 
 
-def append_missing_candidate_rows(answer: str, hits: list[SearchHit]) -> str:
+def append_missing_candidate_rows(answer: str, hits: list[SearchHit], query: str) -> str:
+    if not wants_completeness_check(query):
+        return answer
+
     missing_rows = []
     for index, hit in enumerate(hits, start=1):
         candidate_id = f"C{index}"
         if candidate_id in answer:
             continue
-        amount = extract_first_amount(hit)
         missing_rows.append(
-            "| {candidate_id} | {item_title} | {amount} | {file_name} | chunk {chunk_index} |".format(
+            "| {candidate_id} | {candidate_text} | {file_name} | chunk {chunk_index} |".format(
                 candidate_id=candidate_id,
-                item_title=hit.chunk.item_title or "문서에서 확인 안 됨",
-                amount=amount,
+                candidate_text=build_candidate_summary(hit),
                 file_name=hit.chunk.path.name,
                 chunk_index=hit.chunk.index,
             )
@@ -219,20 +219,28 @@ def append_missing_candidate_rows(answer: str, hits: list[SearchHit]) -> str:
         "",
         "## 누락 방지 후보",
         "",
-        "| candidate_id | 예산 항목 | 증액 금액 | 근거 파일명 | 근거 chunk |",
-        "| --- | --- | --- | --- | --- |",
+        "| candidate_id | 후보 내용 | 근거 파일명 | 근거 chunk |",
+        "| --- | --- | --- | --- |",
         *missing_rows,
     ]
     return "\n".join(lines)
 
 
-def extract_first_amount(hit: SearchHit) -> str:
-    amounts = hit.chunk.metadata.get("amounts") if hit.chunk.metadata else None
-    if amounts:
-        return f"+{amounts[0]}억원"
-    return "문서에서 확인 안 됨"
+def build_candidate_summary(hit: SearchHit) -> str:
+    if hit.chunk.item_title:
+        return hit.chunk.item_title
+    first_line = next((line.strip() for line in hit.chunk.content.splitlines() if line.strip()), "")
+    return first_line[:80] if first_line else "문서에서 확인 안 됨"
+
+
+def wants_completeness_check(query: str) -> bool:
+    return any(keyword in query for keyword in ["모두", "전체", "전부", "빠짐없이", "누락 없이"])
 
 
 def wants_table(query: str) -> bool:
     lowered = query.lower()
     return "표" in lowered or "table" in lowered or "테이블" in lowered
+
+
+def wants_numeric_column(query: str) -> bool:
+    return any(keyword in query for keyword in ["금액", "비용", "예산", "증액", "수치", "가격", "단가"])
