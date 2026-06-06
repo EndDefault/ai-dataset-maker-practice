@@ -14,6 +14,8 @@ from src.storage.sqlite_store import list_chunks_missing_embeddings, search_chun
 GENERIC_QUERY_TERMS = {
     "기준",
     "기준으로",
+    "각",
+    "각각",
     "내용",
     "관련",
     "관련된",
@@ -24,12 +26,25 @@ GENERIC_QUERY_TERMS = {
     "자료",
     "예산",
     "예산안",
+    "대상",
+    "모두",
+    "무관한",
+    "사업",
+    "사업별",
+    "세부",
+    "제외",
+    "제외하고",
+    "제외해줘",
+    "증액",
     "정리",
+    "정리하고",
     "정리해줘",
     "지원",
     "질문",
+    "chunk",
     "찾아",
     "찾아서",
+    "찾아줘",
     "출력",
     "파일",
     "파일명",
@@ -40,6 +55,8 @@ GENERIC_QUERY_TERMS = {
     "항목",
     "항목별",
     "함께",
+    "포함",
+    "포함된",
 }
 
 
@@ -120,7 +137,12 @@ def keyword_score(content: str, query_terms: list[str]) -> float:
     if not matches:
         return 0.0
     total_count = sum(lowered.count(term) for term in matches)
-    return len(matches) * 0.35 + min(total_count, 8) * 0.05
+    score = len(matches) * 0.35 + min(total_count, 8) * 0.05
+    if "【" in content and len(matches) >= 2:
+        score += 0.5
+    if "ㅇ" in content and len(matches) >= 2:
+        score += 0.25
+    return score
 
 
 def ensure_embeddings_for_paths(paths: list[Path], *, model: str) -> int:
