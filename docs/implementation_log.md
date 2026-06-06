@@ -286,3 +286,30 @@
 남은 작업:
 
 - 숫자 추출 안정성을 더 높이려면 LLM 답변 후처리 검증을 검토한다.
+
+## 2026-06-06 v0.3.3 구조화 청크와 Home 캐시 삭제
+
+변경 내용:
+
+- 문자 수 기반 청크를 fallback으로 유지하면서, PDF 텍스트에서는 섹션/항목 단위 chunk를 우선 생성한다.
+- `[page N]`, `【 】`, `ㅇ`, `-` 패턴을 이용해 페이지, 섹션 제목, 항목을 감지한다.
+- `chunks` 테이블에 `chunk_type`, `section_title`, `item_title`, `page_number`, `metadata_json` 컬럼을 추가했다.
+- `analysis_version`을 추가해 파일이 바뀌지 않아도 v0.3.3 구조화 청크 기준으로 기존 문서를 재분석한다.
+- RAG 검색에서 섹션 제목이 잡히면 해당 섹션의 item chunk 전체를 컨텍스트로 사용한다.
+- candidate_id를 컨텍스트에 붙이고, 모델 응답에서 빠진 candidate는 누락 방지 후보로 보강한다.
+- v0.3.2의 하드코딩 섹션 보정과 긴 excerpt 보정 코드를 줄였다.
+- Home 결과 미리보기에 이전 결과와 Streamlit 캐시 삭제 버튼을 추가했다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- 예산안 PDF에서 `저출생 미래세대 지원` 섹션 item chunk 9개 생성 확인
+- DB 재분석 후 `chunks` 구조화 metadata 저장 확인
+- RAG 컨텍스트에 해당 섹션 item chunk 9개가 모두 들어가는지 확인
+- candidate_id 누락 보강 smoke 테스트 통과
+- 실제 RAG 호출에서 9개 후보가 모두 표에 표시되는지 확인
+
+남은 작업:
+
+- 문서별 형식이 달라질 때 섹션/항목 감지 패턴을 추가로 확장한다.
+- 요약 작업의 숫자 단위 안정화는 별도 개선 후보로 유지한다.

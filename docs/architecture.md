@@ -254,7 +254,7 @@ elif "에러" in command or "오류" in command:
 ```txt
 [문서 수집]
         ↓
-[chunk 분리]
+[페이지/섹션/항목 기반 chunk 분리]
         ↓
 [`bge-m3` embedding 생성]
         ↓
@@ -275,7 +275,7 @@ elif "에러" in command or "오류" in command:
 | --- | --- |
 | `runs` | 작업 실행 기록 |
 | `documents` | 입력 문서 메타데이터, 처리 상태, PDF 페이지 수, 추출 글자 수, chunk 수 |
-| `chunks` | 검색 단위 문단/chunk와 문서별 인덱싱 결과 |
+| `chunks` | 검색 단위 chunk와 `chunk_type`, `section_title`, `item_title`, `page_number`, `metadata_json` |
 | `embeddings` | chunk embedding 메타데이터와 JSON 백업 |
 | `chunk_embeddings` | `sqlite-vec` 가상 테이블, 실제 벡터 검색 대상 |
 | `artifacts` | Markdown, error.json 같은 산출물 경로 |
