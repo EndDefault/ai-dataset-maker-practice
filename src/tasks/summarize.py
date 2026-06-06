@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from src.config import get_config
 from src.errors import AppError, ErrorCode
-from src.llm.ollama_client import get_ollama_client
 from src.rag.chunker import load_documents
 from src.schemas import TaskRequest
-from src.tasks.common import success_result
+from src.tasks.common import generate_korean_checked, success_result
 
 
 def run(request: TaskRequest):
@@ -26,7 +25,7 @@ def run(request: TaskRequest):
 {combined}
 """
     try:
-        summary = get_ollama_client().generate_korean(prompt, model=config.main_model)
+        summary = generate_korean_checked(prompt, model=config.main_model, task_name="문서 요약")
     except AppError as error:
         summary = fallback_summary(combined, error.message)
 
