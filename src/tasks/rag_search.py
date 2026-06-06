@@ -4,20 +4,33 @@ from src.config import get_config
 from src.errors import AppError, ErrorCode
 from src.llm.ollama_client import get_ollama_client
 from src.rag.chunker import build_chunks
-from src.rag.vector_store import lexical_search
+from src.rag.vector_store import lexical_search, semantic_search
 from src.schemas import TaskRequest
 from src.tasks.common import success_result
 
 
 def run(request: TaskRequest):
     config = get_config()
-    chunks = build_chunks(request.input_paths)
-    if not chunks:
-        raise AppError(ErrorCode.MISSING_FILE, "RAG 검색에 사용할 txt/md/pdf 파일을 찾지 못했습니다.")
+    search_mode = "vector"
+    vector_error: str | None = None
+    try:
+        hits = semantic_search(request.query, request.input_paths, limit=6)
+    except AppError as error:
+        vector_error = error.message
+        hits = []
+    except Exception as error:
+        vector_error = str(error)
+        hits = []
 
-    hits = lexical_search(request.query, chunks, limit=6)
     if not hits:
-        hits = lexical_search(" ".join(request.query.split()[:3]), chunks, limit=6)
+        search_mode = "lexical"
+        chunks = build_chunks(request.input_paths)
+        if not chunks:
+            raise AppError(ErrorCode.MISSING_FILE, "RAG 검색에 사용할 txt/md/pdf 파일을 찾지 못했습니다.")
+
+        hits = lexical_search(request.query, chunks, limit=6)
+        if not hits:
+            hits = lexical_search(" ".join(request.query.split()[:3]), chunks, limit=6)
 
     context = "\n\n".join(
         f"[{idx}] {hit.chunk.path.name} / chunk {hit.chunk.index}\n{hit.chunk.content[:1200]}"
@@ -50,9 +63,11 @@ def run(request: TaskRequest):
 
 {context}
 """
+    if vector_error and search_mode == "lexical":
+        answer = f"{answer}\n\n---\n\n참고: 벡터 검색을 사용할 수 없어 키워드 검색으로 대체했습니다. 원인: {vector_error}"
 
     sources = [
-        {"path": str(hit.chunk.path), "chunk_index": hit.chunk.index, "score": hit.score}
+        {"path": str(hit.chunk.path), "chunk_index": hit.chunk.index, "score": hit.score, "search_mode": search_mode}
         for hit in hits
     ]
     return success_result(request, title="RAG 질의응답", body=answer, model=config.main_model, sources=sources)

@@ -21,12 +21,30 @@ DOCUMENT_COLUMN_UPGRADES = {
     "analyzed_at": "analyzed_at text",
 }
 
+EMBEDDING_COLUMN_UPGRADES = {
+    "dimension": "dimension integer not null default 0",
+}
 
-def connect() -> sqlite3.Connection:
+VECTOR_TABLE_NAME = "chunk_embeddings"
+
+
+def connect(*, load_vec: bool = False) -> sqlite3.Connection:
     config = get_config()
     connection = sqlite3.connect(config.db_path)
     connection.row_factory = sqlite3.Row
+    if load_vec:
+        _load_sqlite_vec(connection)
     return connection
+
+
+def _load_sqlite_vec(db: sqlite3.Connection) -> None:
+    import sqlite_vec
+
+    db.enable_load_extension(True)
+    try:
+        sqlite_vec.load(db)
+    finally:
+        db.enable_load_extension(False)
 
 
 def initialize_database() -> None:
@@ -102,6 +120,14 @@ def initialize_database() -> None:
             """
         )
         _upgrade_documents_table(db)
+        _upgrade_embeddings_table(db)
+        db.execute("create index if not exists idx_chunks_document_id on chunks(document_id)")
+        db.execute("create index if not exists idx_embeddings_chunk_model on embeddings(chunk_id, model)")
+
+    try:
+        initialize_vector_table()
+    except Exception:
+        pass
 
 
 def _upgrade_documents_table(db: sqlite3.Connection) -> None:
@@ -109,6 +135,26 @@ def _upgrade_documents_table(db: sqlite3.Connection) -> None:
     for name, definition in DOCUMENT_COLUMN_UPGRADES.items():
         if name not in existing_columns:
             db.execute(f"alter table documents add column {definition}")
+
+
+def _upgrade_embeddings_table(db: sqlite3.Connection) -> None:
+    existing_columns = {row["name"] for row in db.execute("pragma table_info(embeddings)")}
+    for name, definition in EMBEDDING_COLUMN_UPGRADES.items():
+        if name not in existing_columns:
+            db.execute(f"alter table embeddings add column {definition}")
+
+
+def initialize_vector_table() -> None:
+    config = get_config()
+    dimension = int(config.embedding_dimensions)
+    if dimension <= 0:
+        raise ValueError("embedding_dimensions must be greater than 0")
+
+    with connect(load_vec=True) as db:
+        db.execute(
+            f"create virtual table if not exists {VECTOR_TABLE_NAME} "
+            f"using vec0(embedding float[{dimension}])"
+        )
 
 
 def insert_run(request: TaskRequest, *, model: str) -> None:
@@ -243,12 +289,30 @@ def _replace_document_chunks(db: sqlite3.Connection, document_id: int, chunks: l
     if chunk_ids:
         placeholders = ",".join("?" for _ in chunk_ids)
         db.execute(f"delete from embeddings where chunk_id in ({placeholders})", chunk_ids)
+        _delete_chunk_embedding_rows(chunk_ids, db=db)
     db.execute("delete from chunks where document_id = ?", (document_id,))
     now = datetime.now().isoformat(timespec="seconds")
     db.executemany(
         "insert into chunks (document_id, chunk_index, content, created_at) values (?, ?, ?, ?)",
         [(document_id, index, content, now) for index, content in enumerate(chunks, start=1)],
     )
+
+
+def _delete_chunk_embedding_rows(chunk_ids: list[int], *, db: sqlite3.Connection | None = None) -> None:
+    if not chunk_ids:
+        return
+
+    try:
+        if db is not None:
+            _load_sqlite_vec(db)
+            db.executemany(f"delete from {VECTOR_TABLE_NAME} where rowid = ?", [(chunk_id,) for chunk_id in chunk_ids])
+            return
+
+        initialize_vector_table()
+        with connect(load_vec=True) as vector_db:
+            vector_db.executemany(f"delete from {VECTOR_TABLE_NAME} where rowid = ?", [(chunk_id,) for chunk_id in chunk_ids])
+    except Exception:
+        return
 
 
 def delete_document(path: Path) -> None:
@@ -263,8 +327,183 @@ def delete_document(path: Path) -> None:
         if chunk_ids:
             placeholders = ",".join("?" for _ in chunk_ids)
             db.execute(f"delete from embeddings where chunk_id in ({placeholders})", chunk_ids)
+            _delete_chunk_embedding_rows(chunk_ids, db=db)
         db.execute("delete from chunks where document_id = ?", (document_id,))
         db.execute("delete from documents where id = ?", (document_id,))
+
+
+def list_chunks_for_paths(paths: list[Path]) -> list[sqlite3.Row]:
+    initialize_database()
+
+    from src.rag.chunker import collect_text_files
+
+    file_paths = collect_text_files(paths)
+    for file_path in file_paths:
+        upsert_document(file_path)
+
+    if not file_paths:
+        return []
+
+    placeholders = ",".join("?" for _ in file_paths)
+    with connect() as db:
+        return list(
+            db.execute(
+                f"""
+                select
+                  c.id,
+                  c.document_id,
+                  c.chunk_index,
+                  c.content,
+                  d.path,
+                  d.name
+                from chunks c
+                join documents d on d.id = c.document_id
+                where d.path in ({placeholders})
+                order by d.path, c.chunk_index
+                """,
+                [str(path) for path in file_paths],
+            )
+        )
+
+
+def list_chunks_missing_embeddings(paths: list[Path], *, model: str) -> list[sqlite3.Row]:
+    chunks = list_chunks_for_paths(paths)
+    chunk_ids = [int(row["id"]) for row in chunks]
+    if not chunk_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in chunk_ids)
+    with connect() as db:
+        metadata_ids = {
+            int(row["chunk_id"])
+            for row in db.execute(
+                f"select chunk_id from embeddings where model = ? and chunk_id in ({placeholders})",
+                [model, *chunk_ids],
+            )
+        }
+
+    vector_ids: set[int] = set()
+    try:
+        initialize_vector_table()
+        with connect(load_vec=True) as db:
+            vector_ids = {
+                int(row["rowid"])
+                for row in db.execute(
+                    f"select rowid from {VECTOR_TABLE_NAME} where rowid in ({placeholders})",
+                    chunk_ids,
+                )
+            }
+    except Exception:
+        vector_ids = set()
+
+    return [row for row in chunks if int(row["id"]) not in metadata_ids or int(row["id"]) not in vector_ids]
+
+
+def store_chunk_embedding(chunk_id: int, *, model: str, vector: list[float]) -> None:
+    initialize_database()
+    initialize_vector_table()
+
+    config = get_config()
+    values = [float(value) for value in vector]
+    if len(values) != int(config.embedding_dimensions):
+        raise ValueError(
+            f"{model} embedding dimension mismatch: expected {config.embedding_dimensions}, got {len(values)}"
+        )
+
+    import sqlite_vec
+
+    now = datetime.now().isoformat(timespec="seconds")
+    with connect(load_vec=True) as db:
+        db.execute(f"delete from {VECTOR_TABLE_NAME} where rowid = ?", (chunk_id,))
+        db.execute(
+            f"insert into {VECTOR_TABLE_NAME}(rowid, embedding) values (?, ?)",
+            (chunk_id, sqlite_vec.serialize_float32(values)),
+        )
+        db.execute("delete from embeddings where chunk_id = ? and model = ?", (chunk_id, model))
+        db.execute(
+            """
+            insert into embeddings (chunk_id, model, vector_json, dimension, created_at)
+            values (?, ?, ?, ?, ?)
+            """,
+            (chunk_id, model, json.dumps(values, ensure_ascii=False), len(values), now),
+        )
+
+
+def search_chunk_embeddings(
+    query_vector: list[float],
+    paths: list[Path],
+    *,
+    model: str,
+    limit: int = 6,
+) -> list[sqlite3.Row]:
+    initialize_database()
+    initialize_vector_table()
+    if limit <= 0:
+        return []
+
+    from src.rag.chunker import collect_text_files
+    import sqlite_vec
+
+    file_paths = collect_text_files(paths)
+    if not file_paths:
+        return []
+
+    values = [float(value) for value in query_vector]
+    placeholders = ",".join("?" for _ in file_paths)
+    with connect(load_vec=True) as db:
+        total_row = db.execute(f"select count(*) as count from {VECTOR_TABLE_NAME}").fetchone()
+        candidate_limit = max(limit, int(total_row["count"] or 0))
+        return list(
+            db.execute(
+                f"""
+                select
+                  c.id,
+                  c.document_id,
+                  c.chunk_index,
+                  c.content,
+                  d.path,
+                  d.name,
+                  v.distance
+                from {VECTOR_TABLE_NAME} v
+                join chunks c on c.id = v.rowid
+                join documents d on d.id = c.document_id
+                join embeddings e on e.chunk_id = c.id and e.model = ?
+                where v.embedding match ?
+                  and k = ?
+                  and d.path in ({placeholders})
+                order by v.distance
+                limit ?
+                """,
+                [
+                    model,
+                    sqlite_vec.serialize_float32(values),
+                    candidate_limit,
+                    *[str(path) for path in file_paths],
+                    limit,
+                ],
+            )
+        )
+
+
+def get_embedding_index_summary() -> dict[str, int | bool]:
+    initialize_database()
+    with connect() as db:
+        metadata_count = int(db.execute("select count(*) from embeddings").fetchone()[0])
+
+    try:
+        initialize_vector_table()
+        with connect(load_vec=True) as db:
+            vector_count = int(db.execute(f"select count(*) from {VECTOR_TABLE_NAME}").fetchone()[0])
+        sqlite_vec_available = True
+    except Exception:
+        vector_count = 0
+        sqlite_vec_available = False
+
+    return {
+        "metadata_count": metadata_count,
+        "vector_count": vector_count,
+        "sqlite_vec_available": sqlite_vec_available,
+    }
 
 
 def list_documents() -> list[sqlite3.Row]:

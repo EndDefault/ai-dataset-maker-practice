@@ -19,6 +19,7 @@ class AppConfig:
     main_model: str = os.getenv("OLLAMA_MAIN_MODEL", "qwen3:14b")
     cleaner_model: str = os.getenv("OLLAMA_CLEANER_MODEL", "qwen3:4b")
     embedding_model: str = os.getenv("OLLAMA_EMBEDDING_MODEL", "bge-m3")
+    embedding_dimensions: int = int(os.getenv("OLLAMA_EMBEDDING_DIMENSIONS", "1024"))
     llm_timeout_seconds: int = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "90"))
 
 
