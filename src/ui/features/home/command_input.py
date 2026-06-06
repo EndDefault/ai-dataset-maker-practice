@@ -7,12 +7,19 @@ import streamlit as st
 from src.config import get_config
 from src.normalization.io_cleaner import TASK_LABELS
 from src.rag.chunker import collect_text_files
+from src.storage.sqlite_store import get_document_by_path, upsert_document
+from src.ui.shared.document_status import document_is_ready, document_status_label
 
 
 def render_input_file_picker() -> list[str]:
     config = get_config()
     uploaded_files = collect_text_files([config.uploads_dir])
     selected_paths: list[str] = st.session_state.setdefault("selected_input_paths", [])
+    uploaded_path_set = {str(file_path) for file_path in uploaded_files}
+    selected_paths = [path for path in selected_paths if path in uploaded_path_set]
+    st.session_state["selected_input_paths"] = selected_paths
+    for file_path in uploaded_files:
+        upsert_document(file_path)
 
     st.markdown('<div class="section-label">이번 작업에 사용할 파일</div>', unsafe_allow_html=True)
     if not uploaded_files:
@@ -39,16 +46,25 @@ def render_input_file_picker() -> list[str]:
         return []
 
     st.write("이번 작업 입력 목록")
+    unready_names: list[str] = []
     for index, path_text in enumerate(list(selected_paths)):
         path = Path(path_text)
+        document = get_document_by_path(path)
+        status = document_status_label(document["status"] if document else None)
+        extracted_chars = int(document["extracted_char_count"] or 0) if document else 0
+        chunk_count = int(document["chunk_count"] or 0) if document else 0
+        if not document_is_ready(document):
+            unready_names.append(path.name)
         col_name, col_delete = st.columns([0.75, 0.25])
         with col_name:
-            st.caption(path.name)
+            st.caption(f"{path.name} · {status} · {extracted_chars:,}자 · {chunk_count:,} chunks")
         with col_delete:
             if st.button("선택 해제", key=f"remove_input_{index}_{path.name}", use_container_width=True):
                 selected_paths.remove(path_text)
                 st.session_state["selected_input_paths"] = selected_paths
                 st.rerun()
+    if unready_names:
+        st.warning("상태가 좋지 않은 문서가 있습니다: " + ", ".join(unready_names))
     return list(selected_paths)
 
 
