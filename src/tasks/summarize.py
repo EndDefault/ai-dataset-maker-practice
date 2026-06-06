@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from src.config import get_config
 from src.errors import AppError, ErrorCode
-from src.llm.ollama_client import get_ollama_client
 from src.rag.chunker import load_documents
 from src.schemas import TaskRequest
-from src.tasks.common import success_result
+from src.tasks.common import generate_korean_checked, success_result
 
 
 def run(request: TaskRequest):
@@ -18,15 +17,19 @@ def run(request: TaskRequest):
     prompt = f"""아래 문서를 한국어로 요약해 주세요.
 
 요구사항:
+- 사고 과정, 분석 방법, 추론 과정은 쓰지 않습니다.
+- 문서에 직접 있는 사실과 수치만 사용합니다.
+- 문서에서 확인되지 않는 연도, 정책명, 평가 의견은 만들지 않습니다.
 - 핵심 내용 5개 이하
 - 중요한 파일명 언급
-- 다음 행동이 있으면 별도 표시
+- 다음 행동이 문서에 직접 있으면 별도 표시
+- Markdown으로 간결하게 작성합니다.
 
 문서:
 {combined}
 """
     try:
-        summary = get_ollama_client().generate_korean(prompt, model=config.main_model)
+        summary = generate_korean_checked(prompt, model=config.main_model, task_name="문서 요약")
     except AppError as error:
         summary = fallback_summary(combined, error.message)
 

@@ -21,7 +21,7 @@
 - [x] `sqlite-vec` 설치
 - [x] `sqlite-vec` 로드 테스트
 - [x] `requirements.txt` 생성
-- [ ] Ollama 모델 확인: `qwen3:14b`, `qwen3:4b`, `bge-m3`
+- [x] Ollama 모델 확인: `qwen3:14b`, `qwen3:4b`, `bge-m3`
 
 ## Phase 3. 입출력 정제
 
@@ -53,8 +53,8 @@
 - [x] `artifacts` 테이블 생성
 - [x] `errors` 테이블 생성
 - [x] 문서 chunk 분리
-- [ ] `bge-m3` embedding 생성
-- [ ] SQLite 벡터 검색 검증
+- [x] `bge-m3` embedding 생성
+- [x] SQLite 벡터 검색 검증
 
 ## Phase 5. 후보 기능 구현
 
@@ -121,3 +121,58 @@
 - [x] 요약, RAG 질의응답, 에러 분석에 한국어 출력 안정화 연결
 - [x] 변경 없는 문서 재분석 생략
 - [x] 문서 재분석 생략 동작 확인
+
+## Phase 12. v0.3.0 실제 벡터 RAG 연결
+
+- [x] `bge-m3` 실제 embedding 응답 확인
+- [x] 기본 embedding 차원 1024 설정
+- [x] `sqlite-vec` `chunk_embeddings` 가상 테이블 생성
+- [x] chunk embedding을 `embeddings` 메타 테이블과 `chunk_embeddings` 벡터 테이블에 저장
+- [x] 문서 재분석과 삭제 시 기존 embedding row 정리
+- [x] RAG 질의응답에서 벡터 검색을 우선 사용
+- [x] 벡터 검색 실패 시 lexical fallback 검색 사용
+- [x] RAG sources에 `search_mode` 기록
+- [x] Documents 페이지에 저장된 벡터 row 수 표시
+
+## Phase 13. v0.3.1 RAG 품질 개선
+
+- [x] RAG 답변에서 요청 주제와 무관한 항목 제외
+- [x] 표 요청 시 Markdown 표 형식 강제
+- [x] 벡터 검색 결과에 키워드 포함 가중치 반영
+- [x] LLM 응답이 빈 문자열이면 성공 처리하지 않기
+- [x] 빈 응답 재시도 또는 실패 기록 처리
+- [x] 근거 파일명과 chunk 정보를 답변에 더 명확히 표시
+- [x] 예산안 항목/지원 내용/금액 추출 출력 안정화
+- [ ] 실제 사용 중 금액과 chunk 번호 정확도 추가 관찰
+
+## Phase 14. v0.3.2 섹션형 RAG 질문 보정
+
+- [x] 검색 핵심어에서 작업 지시어 제거
+- [x] 검색 핵심어에서 제외 지시어 제거
+- [x] 섹션 제목 chunk 우선 선택
+- [x] 섹션 제목 chunk의 다음 chunk를 함께 컨텍스트로 사용
+- [x] 핵심어 주변 문맥으로 근거 excerpt 압축
+- [x] 증액 금액은 `+N억원` 형식만 사용하도록 프롬프트 강화
+- [x] 인원, 개소 수, 비율, 대상 규모를 금액으로 쓰지 않도록 제한
+
+## Phase 15. v0.3.3 구조화 청크와 캐시 삭제
+
+- [x] 구조화 chunk dataclass 추가
+- [x] 페이지 번호, 섹션 제목, 항목 제목, 금액 metadata 추출
+- [x] `chunks` 테이블에 구조화 metadata 컬럼 추가
+- [x] analysis version 변경 시 기존 문서 재분석
+- [x] 섹션 질문에서 같은 섹션 item chunk 전체 조회
+- [x] candidate_id 누락 후보 보강
+- [x] v0.3.2 하드코딩 섹션 보정 코드 정리
+- [x] Home 이전 결과/캐시 삭제 버튼 추가
+
+## Phase 16. v0.3.4 섹션 그룹 청크 실험과 기준 복원
+
+- [x] section 단위 chunk 검색 실험
+- [x] section chunk 기반 RAG 품질 저하 확인
+- [x] RAG/DB 검색 기준을 v0.3.3 item chunk 구조로 복원
+- [x] Documents chunk 미리보기에 섹션 묶음 표시만 유지
+- [x] RAG 표 출력에서 예산안 전용 컬럼 제거
+- [x] 누락 방지 후보를 범용 후보 표로 변경
+- [ ] 범용 RAG 기준 평가 질문 5~10개 작성
+- [ ] 여러 문서 기준 품질 평가표 작성

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from src.config import get_config
 from src.errors import AppError
-from src.llm.ollama_client import get_ollama_client
 from src.schemas import TaskRequest
-from src.tasks.common import success_result
+from src.tasks.common import generate_korean_checked, success_result
 
 
 def run(request: TaskRequest):
@@ -22,7 +21,7 @@ def run(request: TaskRequest):
 {request.command}
 """
     try:
-        answer = get_ollama_client().generate_korean(prompt, model=config.main_model)
+        answer = generate_korean_checked(prompt, model=config.main_model, task_name="에러 분석")
     except AppError as error:
         answer = fallback_error_explanation(request.command, error.message)
     return success_result(request, title="에러 분석", body=answer, model=config.main_model)
