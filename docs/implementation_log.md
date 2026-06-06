@@ -191,3 +191,32 @@
 - 실제 요약 실행에서 한국어 재작성 fallback이 필요한 빈도를 관찰한다.
 - 반복되는 입출력 패턴이 쌓이면 LoRA 학습 데이터로 활용할 수 있는 저장 구조를 검토한다.
 - `bge-m3` embedding 생성과 `sqlite-vec` 실제 검색 연결을 다음 후보로 유지한다.
+
+## 2026-06-06 v0.3.0 실제 벡터 RAG 연결
+
+변경 내용:
+
+- 기본 embedding 차원을 `bge-m3` 기준 1024로 설정했다.
+- SQLite 연결에서 `sqlite-vec` extension을 로드할 수 있게 했다.
+- `chunk_embeddings` sqlite-vec 가상 테이블을 생성한다.
+- 문서 chunk별 embedding을 `embeddings` 메타 테이블과 `chunk_embeddings` 벡터 테이블에 저장한다.
+- 문서가 재분석되거나 삭제될 때 기존 embedding row도 함께 정리한다.
+- RAG 질의응답은 `bge-m3`로 질문 embedding을 만든 뒤 sqlite-vec 벡터 검색을 먼저 사용한다.
+- 벡터 검색을 사용할 수 없거나 결과가 없으면 기존 lexical 검색으로 fallback한다.
+- RAG sources에 `search_mode`를 기록한다.
+- Documents 페이지의 RAG 준비 상태에 embedding 차원과 저장된 벡터 row 수를 표시한다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- `sqlite-vec` 저장/검색 smoke 테스트 통과: 1024차원 더미 벡터 검색 거리 `0.0`
+- `ollama list`에서 `qwen3:14b`, `qwen3:4b`, `bge-m3` 설치 확인
+- `bge-m3` 실제 embedding 응답 확인: 1024차원, norm `1.0`
+- 업로드 문서 기준 `semantic_search()` 실제 벡터 검색 확인
+- RAG 작업 함수에서 sources `search_mode`가 `vector`로 기록되는지 확인
+
+남은 작업:
+
+- 실제 RAG 답변 품질과 검색 근거 순위를 관찰한다.
+- `qwen3:4b` 기반 입출력 정제 AI를 연결한다.
+- OCR 지원 범위와 우선순위를 정한다.

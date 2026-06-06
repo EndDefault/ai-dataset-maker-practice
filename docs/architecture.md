@@ -262,12 +262,12 @@ elif "에러" in command or "오류" in command:
         ↓
 [사용자 질문 embedding]
         ↓
-[관련 chunk 검색]
+[sqlite-vec 관련 chunk 검색]
         ↓
 [`qwen3:14b` 답변 생성]
 ```
 
-`sqlite-vec`는 Python 가상환경에 설치해서 사용한다. 아직 pre-v1이므로 변경 가능성을 고려한다.
+`sqlite-vec`는 Python 가상환경에 설치해서 사용한다. RAG 질의응답은 벡터 검색을 먼저 사용하고, sqlite-vec 또는 embedding 호출을 사용할 수 없으면 lexical fallback 검색으로 대체한다.
 
 ## SQLite 테이블 초안
 
@@ -276,7 +276,8 @@ elif "에러" in command or "오류" in command:
 | `runs` | 작업 실행 기록 |
 | `documents` | 입력 문서 메타데이터, 처리 상태, PDF 페이지 수, 추출 글자 수, chunk 수 |
 | `chunks` | 검색 단위 문단/chunk와 문서별 인덱싱 결과 |
-| `embeddings` | chunk embedding 또는 벡터 인덱스 연결 정보 |
+| `embeddings` | chunk embedding 메타데이터와 JSON 백업 |
+| `chunk_embeddings` | `sqlite-vec` 가상 테이블, 실제 벡터 검색 대상 |
 | `artifacts` | Markdown, error.json 같은 산출물 경로 |
 | `errors` | 오류 코드와 상세 메시지 |
 

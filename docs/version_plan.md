@@ -17,7 +17,7 @@ v0.2.1
 한국어 출력 안정화와 문서 재분석 성능 개선
 
 v0.3.0
-OCR 또는 실제 embedding/RAG 중 우선순위가 높은 기능 추가
+실제 embedding/RAG 연결
 
 v1.0.0
 로컬 단일 사용자 기준 안정 버전
@@ -107,6 +107,27 @@ Home 페이지에서 유지할 개념:
 - 파일 크기와 수정 시간이 바뀌지 않은 문서는 재분석하지 않음
 - Documents/Home 렌더링 시 PDF 재분석 비용 감소
 
+## v0.3.0 구현 기준
+
+`v0.3.0`은 OCR보다 실제 embedding/RAG 연결을 먼저 구현하는 버전이다.
+
+포함된 기능:
+
+- `bge-m3` embedding 생성
+- 기본 embedding 차원 1024 설정
+- `sqlite-vec` `chunk_embeddings` 가상 테이블 생성
+- 문서 chunk embedding을 SQLite에 저장
+- RAG 질의응답에서 벡터 검색 우선 사용
+- 벡터 검색 실패 시 lexical fallback 검색 사용
+- 검색 근거 sources에 `search_mode` 기록
+- Documents 페이지에 저장된 벡터 row 수 표시
+
+제한:
+
+- 스캔 이미지 PDF OCR은 아직 연결하지 않는다.
+- `qwen3:4b` 기반 입출력 정제 AI는 아직 실제 모델 호출 전이다.
+- 벡터 검색 품질은 실제 사용 중 검색어와 chunk 크기를 관찰하며 조정한다.
+
 ## UI 개편 시점
 
 큰 UI/UX 개편은 `v0.4.0` 전후가 적당하다.
@@ -124,7 +145,7 @@ v0.2.0
 문서 상태와 인덱싱 표시를 먼저 구현한다.
 
 v0.3.0
-OCR 또는 실제 embedding/RAG 연결 중 하나를 구현한다.
+실제 embedding/RAG 연결을 구현한다.
 
 v0.4.0
 기능 흐름이 보이면 UI/UX를 한 번 크게 정리한다.

@@ -21,7 +21,7 @@
 - [x] `sqlite-vec` 설치
 - [x] `sqlite-vec` 로드 테스트
 - [x] `requirements.txt` 생성
-- [ ] Ollama 모델 확인: `qwen3:14b`, `qwen3:4b`, `bge-m3`
+- [x] Ollama 모델 확인: `qwen3:14b`, `qwen3:4b`, `bge-m3`
 
 ## Phase 3. 입출력 정제
 
@@ -53,8 +53,8 @@
 - [x] `artifacts` 테이블 생성
 - [x] `errors` 테이블 생성
 - [x] 문서 chunk 분리
-- [ ] `bge-m3` embedding 생성
-- [ ] SQLite 벡터 검색 검증
+- [x] `bge-m3` embedding 생성
+- [x] SQLite 벡터 검색 검증
 
 ## Phase 5. 후보 기능 구현
 
@@ -121,3 +121,15 @@
 - [x] 요약, RAG 질의응답, 에러 분석에 한국어 출력 안정화 연결
 - [x] 변경 없는 문서 재분석 생략
 - [x] 문서 재분석 생략 동작 확인
+
+## Phase 12. v0.3.0 실제 벡터 RAG 연결
+
+- [x] `bge-m3` 실제 embedding 응답 확인
+- [x] 기본 embedding 차원 1024 설정
+- [x] `sqlite-vec` `chunk_embeddings` 가상 테이블 생성
+- [x] chunk embedding을 `embeddings` 메타 테이블과 `chunk_embeddings` 벡터 테이블에 저장
+- [x] 문서 재분석과 삭제 시 기존 embedding row 정리
+- [x] RAG 질의응답에서 벡터 검색을 우선 사용
+- [x] 벡터 검색 실패 시 lexical fallback 검색 사용
+- [x] RAG sources에 `search_mode` 기록
+- [x] Documents 페이지에 저장된 벡터 row 수 표시

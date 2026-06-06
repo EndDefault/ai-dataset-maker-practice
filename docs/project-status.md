@@ -15,11 +15,11 @@
 
 ## 현재 버전
 
-현재 구현 상태는 `v0.2.1`으로 둔다.
+현재 구현 상태는 `v0.3.0`으로 둔다.
 
-`v0.2.1`은 문서 처리 상태 확인 기능 위에 한국어 출력 안정화와 문서 재분석 성능 개선을 추가한 버전이다.
+`v0.3.0`은 문서 처리 상태 확인 기능 위에 `bge-m3` embedding과 `sqlite-vec` 실제 벡터 검색 연결을 추가한 버전이다.
 
-다음 버전은 `v0.3.0`이며, OCR 또는 실제 embedding/RAG 연결 중 우선순위가 높은 기능을 진행한다.
+다음 큰 후보는 `qwen3:4b` 기반 입출력 정제 AI 연결 또는 OCR 지원이다.
 
 ## 완료된 것
 
@@ -46,17 +46,21 @@
 - [x] 생성형 답변의 한국어 출력 안정화
 - [x] 영어 응답으로 보이는 답변의 한국어 재작성 fallback 추가
 - [x] 변경 없는 문서의 재분석 생략
+- [x] Ollama 모델 설치 상태 확인: `qwen3:14b`, `qwen3:4b`, `bge-m3`
+- [x] `bge-m3` embedding 1024차원 응답 확인
+- [x] `sqlite-vec` `chunk_embeddings` 가상 테이블 연결
+- [x] 문서 chunk embedding을 SQLite와 sqlite-vec에 저장
+- [x] RAG 질의응답에서 벡터 검색을 우선 사용
+- [x] 벡터 검색 실패 시 lexical fallback 검색으로 대체
+- [x] Documents 페이지에 저장된 벡터 row 수 표시
 
 ## 진행 중
 
-- [ ] SQLite와 `sqlite-vec` 실제 벡터 검색 연결
 - [ ] `qwen3:4b` 기반 입출력 정제 AI 연결
-- [ ] `bge-m3` 기반 embedding 생성과 벡터 검색 연결
 
 ## 다음 작업
 
-1. Ollama 모델 설치 상태를 확인한다: `qwen3:14b`, `qwen3:4b`, `bge-m3`.
-2. `bge-m3` embedding 생성과 SQLite 저장 흐름을 연결한다.
-3. `sqlite-vec` 실제 벡터 검색을 검증한다.
-4. `qwen3:4b` 기반 입출력 정제 AI를 연결한다.
-5. OCR과 실제 RAG 연결 중 `v0.3.0` 우선순위를 확정한다.
+1. 실제 사용 중 RAG 답변 품질과 검색 근거 순위를 관찰한다.
+2. `qwen3:4b` 기반 입출력 정제 AI를 연결한다.
+3. OCR 지원 범위와 우선순위를 정한다.
+4. `v0.4.0` UI/UX 개편 후보를 정리한다.
