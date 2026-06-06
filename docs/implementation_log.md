@@ -313,3 +313,22 @@
 
 - 문서별 형식이 달라질 때 섹션/항목 감지 패턴을 추가로 확장한다.
 - 요약 작업의 숫자 단위 안정화는 별도 개선 후보로 유지한다.
+
+## 2026-06-06 v0.3.4 섹션 그룹 청크
+
+변경 내용:
+
+- v0.3.3의 항목별 chunk를 section 단위 chunk로 병합했다.
+- 각 section chunk의 `metadata_json.items`에 세부 후보 항목, 증액 금액, 내부 page 추적값을 저장한다.
+- RAG 답변 컨텍스트를 만들 때 section chunk 안의 후보 항목을 `C1`, `C2` 단위로 다시 펼친다.
+- RAG 기본 근거 컨텍스트에서는 page 번호를 제거하고, chunk 번호와 candidate_id를 근거로 사용한다.
+- Documents chunk 미리보기에서 section chunk와 후보 항목, 금액을 표로 확인할 수 있게 했다.
+- `analysis_version`을 `v0.3.4-section-group-chunks`로 올려 기존 v0.3.3 chunk를 재분석하게 했다.
+
+검증:
+
+- 변경 모듈을 `python -B -m ...` 방식으로 import 확인
+- 예산안 PDF 분석 결과 전체 11개 section chunk 생성 확인
+- 예산안 PDF 재분석 후 `저출생 미래세대 지원` section chunk 1개와 후보 항목 9개 확인
+- RAG 컨텍스트에서 후보 항목 9개가 `C1`부터 `C9`까지 펼쳐지는지 확인
+- LLM을 가짜 응답으로 대체한 RAG smoke 테스트에서 sources 9개, 누락 보강 동작 확인
