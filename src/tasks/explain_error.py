@@ -22,7 +22,7 @@ def run(request: TaskRequest):
 {request.command}
 """
     try:
-        answer = get_ollama_client().generate(prompt, model=config.main_model)
+        answer = get_ollama_client().generate_korean(prompt, model=config.main_model)
     except AppError as error:
         answer = fallback_error_explanation(request.command, error.message)
     return success_result(request, title="에러 분석", body=answer, model=config.main_model)

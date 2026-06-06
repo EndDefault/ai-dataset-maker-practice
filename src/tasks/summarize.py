@@ -26,7 +26,7 @@ def run(request: TaskRequest):
 {combined}
 """
     try:
-        summary = get_ollama_client().generate(prompt, model=config.main_model)
+        summary = get_ollama_client().generate_korean(prompt, model=config.main_model)
     except AppError as error:
         summary = fallback_summary(combined, error.message)
 

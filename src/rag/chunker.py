@@ -10,6 +10,15 @@ from src.errors import AppError, ErrorCode
 SUPPORTED_SUFFIXES = {".txt", ".md", ".pdf"}
 
 
+class DocumentStatus:
+    UPLOADED = "uploaded"
+    INDEXED = "indexed"
+    TEXT_EMPTY = "text_empty"
+    SCANNED_PDF = "scanned_pdf"
+    UNSUPPORTED = "unsupported"
+    ERROR = "error"
+
+
 @dataclass
 class TextDocument:
     path: Path
@@ -21,6 +30,27 @@ class TextChunk:
     path: Path
     index: int
     content: str
+
+
+@dataclass
+class PdfTextResult:
+    content: str
+    page_count: int
+    extracted_page_count: int
+
+
+@dataclass
+class DocumentAnalysis:
+    path: Path
+    file_type: str
+    status: str
+    page_count: int | None
+    extracted_char_count: int
+    chunk_count: int
+    text_extractable: bool
+    is_scanned_pdf: bool
+    error_message: str
+    chunks: list[str]
 
 
 def resolve_input_paths(paths: list[Path]) -> list[Path]:
@@ -52,7 +82,7 @@ def read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def read_pdf_file(path: Path) -> str:
+def inspect_pdf_file(path: Path) -> PdfTextResult:
     try:
         from pypdf import PdfReader
     except ImportError as exc:
@@ -72,23 +102,110 @@ def read_pdf_file(path: Path) -> str:
             if text.strip():
                 pages.append(f"[page {index}]\n{text.strip()}")
 
-        if not pages:
-            raise AppError(
-                ErrorCode.UNSUPPORTED_FILE_TYPE,
-                "텍스트를 추출할 수 없는 PDF입니다. 스캔 이미지 PDF는 OCR 단계가 필요합니다.",
-                {"path": str(path)},
-            )
-        return "\n\n".join(pages)
+        return PdfTextResult(content="\n\n".join(pages), page_count=len(reader.pages), extracted_page_count=len(pages))
     except AppError:
         raise
     except Exception as exc:
         raise AppError(ErrorCode.ENCODING_ERROR, "PDF 텍스트 추출 중 오류가 발생했습니다.", {"path": str(path)}) from exc
 
 
+def read_pdf_file(path: Path) -> str:
+    result = inspect_pdf_file(path)
+    if not result.content.strip():
+        raise AppError(
+            ErrorCode.UNSUPPORTED_FILE_TYPE,
+            "텍스트를 추출할 수 없는 PDF입니다. 스캔 이미지 PDF는 OCR 단계가 필요합니다.",
+            {"path": str(path), "page_count": result.page_count},
+        )
+    return result.content
+
+
 def read_document_file(path: Path) -> str:
     if path.suffix.lower() == ".pdf":
         return read_pdf_file(path)
     return read_text_file(path)
+
+
+def analyze_document_file(path: Path) -> DocumentAnalysis:
+    suffix = path.suffix.lower()
+    file_type = suffix.lstrip(".") or "unknown"
+
+    if suffix not in SUPPORTED_SUFFIXES:
+        return DocumentAnalysis(
+            path=path,
+            file_type=file_type,
+            status=DocumentStatus.UNSUPPORTED,
+            page_count=None,
+            extracted_char_count=0,
+            chunk_count=0,
+            text_extractable=False,
+            is_scanned_pdf=False,
+            error_message="지원하지 않는 파일 형식입니다.",
+            chunks=[],
+        )
+
+    try:
+        page_count: int | None = None
+        is_scanned_pdf = False
+        if suffix == ".pdf":
+            pdf_result = inspect_pdf_file(path)
+            content = pdf_result.content
+            page_count = pdf_result.page_count
+            is_scanned_pdf = page_count > 0 and pdf_result.extracted_page_count == 0
+        else:
+            content = read_text_file(path)
+
+        extracted_char_count = len(content.strip())
+        chunks = chunk_text(content)
+        if is_scanned_pdf:
+            status = DocumentStatus.SCANNED_PDF
+            error_message = "텍스트를 추출할 수 없습니다. 스캔 이미지 PDF로 추정됩니다."
+        elif not extracted_char_count:
+            status = DocumentStatus.TEXT_EMPTY
+            error_message = "추출된 텍스트가 없습니다."
+        else:
+            status = DocumentStatus.INDEXED
+            error_message = ""
+
+        return DocumentAnalysis(
+            path=path,
+            file_type=file_type,
+            status=status,
+            page_count=page_count,
+            extracted_char_count=extracted_char_count,
+            chunk_count=len(chunks),
+            text_extractable=bool(extracted_char_count),
+            is_scanned_pdf=is_scanned_pdf,
+            error_message=error_message,
+            chunks=chunks,
+        )
+    except AppError as exc:
+        status = DocumentStatus.UNSUPPORTED if exc.code == ErrorCode.UNSUPPORTED_FILE_TYPE else DocumentStatus.ERROR
+        return DocumentAnalysis(
+            path=path,
+            file_type=file_type,
+            status=status,
+            page_count=None,
+            extracted_char_count=0,
+            chunk_count=0,
+            text_extractable=False,
+            is_scanned_pdf=False,
+            error_message=exc.message,
+            chunks=[],
+        )
+    except Exception as exc:
+        return DocumentAnalysis(
+            path=path,
+            file_type=file_type,
+            status=DocumentStatus.ERROR,
+            page_count=None,
+            extracted_char_count=0,
+            chunk_count=0,
+            text_extractable=False,
+            is_scanned_pdf=False,
+            error_message=str(exc),
+            chunks=[],
+        )
 
 
 def load_documents(paths: list[Path]) -> list[TextDocument]:
