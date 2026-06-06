@@ -274,8 +274,8 @@ elif "에러" in command or "오류" in command:
 | 테이블 | 용도 |
 | --- | --- |
 | `runs` | 작업 실행 기록 |
-| `documents` | 입력 문서 메타데이터 |
-| `chunks` | 검색 단위 문단/chunk |
+| `documents` | 입력 문서 메타데이터, 처리 상태, PDF 페이지 수, 추출 글자 수, chunk 수 |
+| `chunks` | 검색 단위 문단/chunk와 문서별 인덱싱 결과 |
 | `embeddings` | chunk embedding 또는 벡터 인덱스 연결 정보 |
 | `artifacts` | Markdown, error.json 같은 산출물 경로 |
 | `errors` | 오류 코드와 상세 메시지 |

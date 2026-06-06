@@ -140,3 +140,32 @@
 - 지금 버전은 첫 사용 가능 버전이지만, 아직 OCR과 실제 벡터 RAG가 연결되지 않았다.
 - 다음 단계에서는 기능을 무리하게 늘리기보다 사용자가 업로드 문서의 처리 상태를 신뢰할 수 있게 만드는 것이 우선이다.
 - UI를 너무 일찍 크게 바꾸면 문서 상태, OCR, RAG 흐름이 추가될 때 다시 수정해야 할 가능성이 높다.
+
+## 2026-06-06 v0.2.0 문서 처리 상태 구현
+
+변경 내용:
+
+- 문서 상태 값을 정의했다: 업로드됨, 인덱싱 완료, 텍스트 없음, 스캔 PDF 추정, 지원하지 않는 파일, 오류.
+- PDF 분석에서 페이지 수, 텍스트 추출 페이지 수, 추출 텍스트를 함께 계산하도록 분리했다.
+- 문서별 추출 글자 수와 chunk 수를 계산한다.
+- `documents` 테이블에 `file_type`, `status`, `page_count`, `extracted_char_count`, `chunk_count`, `text_extractable`, `is_scanned_pdf`, `error_message`, `analyzed_at` 컬럼을 추가했다.
+- 기존 DB도 새 컬럼을 받을 수 있도록 `initialize_database()`에서 문서 테이블 업그레이드를 수행한다.
+- 문서 분석 결과에 맞춰 `chunks` 테이블을 다시 동기화한다.
+- Documents 페이지에서 문서 상태, PDF 페이지 수, 추출 글자 수, chunk 수, 마지막 분석 시각을 보여준다.
+- chunk 미리보기는 텍스트 없는 문서나 스캔 PDF 추정 문서를 예외 대신 경고로 안내한다.
+- Home 페이지에서 선택한 입력 문서의 상태와 추출 글자 수, chunk 수를 보여주고, 상태가 좋지 않은 문서를 실행 전에 경고한다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- `initialize_database()` 실행 후 새 `documents` 컬럼 생성 확인
+- uploads 폴더 문서 4개 분석 확인
+- 분석 결과 예시: PDF 3개와 md 1개 모두 `indexed` 상태로 저장
+- `chunks` 테이블 총 18개 chunk 저장 확인
+
+남은 작업:
+
+- `bge-m3` embedding 생성과 저장 연결
+- `sqlite-vec` 실제 벡터 검색 검증
+- `qwen3:4b` 기반 입출력 정제 AI 연결
+- OCR 또는 실제 RAG 연결 중 `v0.3.0` 우선순위 확정
