@@ -18,9 +18,33 @@ def render_run_history() -> str | None:
             "작업": row["task_type"],
             "상태": row["status"],
             "생성": row["created_at"],
-            "출력": row["output_path"],
+            "완료": row["finished_at"] or "-",
+            "모델": row["model"] or "-",
+            "오류": row["error_code"] or "",
+            "출력": row["output_path"] or "",
+            "명령": shorten(row["command"]),
         }
         for row in runs
     ]
     st.dataframe(rows, use_container_width=True, hide_index=True)
-    return st.selectbox("상세 확인할 run", [row["id"] for row in runs])
+
+    run_ids = [row["id"] for row in runs]
+    return st.selectbox(
+        "상세 확인할 run",
+        run_ids,
+        format_func=lambda run_id: format_run_option(run_id, runs),
+    )
+
+
+def shorten(value: str, limit: int = 70) -> str:
+    value = " ".join((value or "").split())
+    if len(value) <= limit:
+        return value
+    return value[: limit - 3] + "..."
+
+
+def format_run_option(run_id: str, runs: list) -> str:
+    for row in runs:
+        if row["id"] == run_id:
+            return f"{row['id']} · {row['task_type']} · {row['status']}"
+    return run_id
