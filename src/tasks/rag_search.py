@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from dataclasses import dataclass
+
 from src.config import get_config
 from src.errors import AppError, ErrorCode
 from src.rag.chunker import build_chunks
@@ -7,6 +10,16 @@ from src.rag.vector_store import SearchHit, extract_query_terms, lexical_search,
 from src.schemas import TaskRequest
 from src.storage.sqlite_store import list_chunks_by_section
 from src.tasks.common import generate_korean_checked, success_result
+
+
+@dataclass
+class EvidenceCandidate:
+    hit: SearchHit
+    section_title: str
+    item_title: str
+    content: str
+    amounts: list[str]
+    page_number: int | None = None
 
 
 def run(request: TaskRequest):
@@ -33,15 +46,16 @@ def run(request: TaskRequest):
             hits = lexical_search(" ".join(request.query.split()[:3]), chunks, limit=8)
 
     query_terms = extract_query_terms(request.query)
-    hits = select_context_hits(hits, request.input_paths, query_terms, limit=12)
+    hits = select_context_hits(hits, request.input_paths, query_terms, limit=8)
+    candidates = build_evidence_candidates(hits)
     context = "\n\n".join(
-        format_context_hit(idx, hit, query_terms)
-        for idx, hit in enumerate(hits, start=1)
+        format_context_candidate(idx, candidate, query_terms)
+        for idx, candidate in enumerate(candidates, start=1)
     )
     if not context:
         raise AppError(ErrorCode.UNKNOWN_COMMAND, "질문과 관련된 문서 근거를 찾지 못했습니다.")
 
-    source_file_names = sorted({hit.chunk.path.name for hit in hits})
+    source_file_names = sorted({candidate.hit.chunk.path.name for candidate in candidates})
     prompt = build_rag_prompt(request.query, context, query_terms, source_file_names)
     try:
         answer = generate_korean_checked(prompt, model=config.main_model, task_name="RAG 질의응답")
@@ -54,45 +68,113 @@ def run(request: TaskRequest):
 
 {context}
 """
-    answer = append_missing_candidate_rows(answer, hits)
+    answer = append_missing_candidate_rows(answer, candidates)
     if vector_error and search_mode == "lexical":
         answer = f"{answer}\n\n---\n\n참고: 벡터 검색을 사용할 수 없어 키워드 검색으로 대체했습니다. 원인: {vector_error}"
 
     sources = [
         {
-            "path": str(hit.chunk.path),
-            "chunk_index": hit.chunk.index,
-            "score": hit.score,
+            "candidate_id": f"C{index}",
+            "path": str(candidate.hit.chunk.path),
+            "chunk_index": candidate.hit.chunk.index,
+            "score": candidate.hit.score,
             "search_mode": search_mode,
-            "matched_terms": matched_terms(hit.chunk.content, query_terms),
-            "chunk_type": hit.chunk.chunk_type,
-            "section_title": hit.chunk.section_title,
-            "item_title": hit.chunk.item_title,
-            "page_number": hit.chunk.page_number,
+            "matched_terms": matched_terms(candidate.content, query_terms),
+            "chunk_type": candidate.hit.chunk.chunk_type,
+            "section_title": candidate.section_title,
+            "item_title": candidate.item_title,
+            "page_number": candidate.page_number,
         }
-        for hit in hits
+        for index, candidate in enumerate(candidates, start=1)
     ]
     return success_result(request, title="RAG 질의응답", body=answer, model=config.main_model, sources=sources)
 
 
-def format_context_hit(index: int, hit, query_terms: list[str]) -> str:
-    terms = matched_terms(hit.chunk.content, query_terms)
+def format_context_candidate(index: int, candidate: EvidenceCandidate, query_terms: list[str]) -> str:
+    terms = sorted(
+        set(
+            matched_terms(candidate.section_title, query_terms)
+            + matched_terms(candidate.item_title, query_terms)
+            + matched_terms(candidate.content, query_terms)
+        )
+    )
     terms_text = ", ".join(terms) if terms else "직접 일치 없음"
-    excerpt = hit.chunk.content[:1200]
-    section_text = hit.chunk.section_title or "없음"
-    item_text = hit.chunk.item_title or "없음"
-    page_text = hit.chunk.page_number if hit.chunk.page_number is not None else ""
+    amount_text = format_amounts(candidate.amounts)
+    excerpt = candidate.content[:1200]
+    section_text = candidate.section_title or "없음"
+    item_text = candidate.item_title or "없음"
+    chunk_type = "section_item" if candidate.item_title else candidate.hit.chunk.chunk_type
     return (
-        f"[{index}] {hit.chunk.path.name} / chunk {hit.chunk.index}\n"
+        f"[{index}] {candidate.hit.chunk.path.name} / chunk {candidate.hit.chunk.index}\n"
         f"candidate_id: C{index}\n"
-        f"근거 파일명(그대로 사용): {hit.chunk.path.name}\n"
-        f"chunk type: {hit.chunk.chunk_type}\n"
+        f"근거 파일명(그대로 사용): {candidate.hit.chunk.path.name}\n"
+        f"chunk type: {chunk_type}\n"
         f"section: {section_text}\n"
         f"item: {item_text}\n"
-        f"page: {page_text}\n"
+        f"amounts: {amount_text}\n"
         f"질문 키워드 일치: {terms_text}\n"
         f"{excerpt}"
     )
+
+
+def build_evidence_candidates(hits: list[SearchHit]) -> list[EvidenceCandidate]:
+    candidates: list[EvidenceCandidate] = []
+    for hit in hits:
+        section_items = hit.chunk.metadata.get("items") if hit.chunk.metadata else None
+        if isinstance(section_items, list):
+            section_candidates = [
+                candidate
+                for item in section_items
+                if (candidate := evidence_candidate_from_item(hit, item)) is not None
+            ]
+            if section_candidates:
+                candidates.extend(section_candidates)
+                continue
+
+        candidates.append(
+            EvidenceCandidate(
+                hit=hit,
+                section_title=hit.chunk.section_title,
+                item_title=hit.chunk.item_title,
+                content=hit.chunk.content,
+                amounts=normalize_amounts(hit.chunk.metadata.get("amounts") if hit.chunk.metadata else []),
+                page_number=hit.chunk.page_number,
+            )
+        )
+    return candidates
+
+
+def evidence_candidate_from_item(hit: SearchHit, item) -> EvidenceCandidate | None:
+    if not isinstance(item, dict):
+        return None
+    content = str(item.get("content") or "").strip()
+    if not content:
+        return None
+    return EvidenceCandidate(
+        hit=hit,
+        section_title=hit.chunk.section_title,
+        item_title=str(item.get("title") or "").strip(),
+        content=content,
+        amounts=normalize_amounts(item.get("amounts")),
+        page_number=normalize_page_number(item.get("page_number")),
+    )
+
+
+def normalize_amounts(value) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if value:
+        return [str(value).strip()]
+    return []
+
+
+def normalize_page_number(value) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def select_context_hits(hits: list[SearchHit], input_paths, query_terms: list[str], *, limit: int = 8) -> list[SearchHit]:
@@ -128,7 +210,7 @@ def choose_section_title(hits: list[SearchHit], query_terms: list[str]) -> str:
             continue
         title_matches = matched_terms(title, query_terms)
         content_matches = matched_terms(hit.chunk.content, query_terms)
-        score = len(title_matches) * 2.0 + len(content_matches) * 0.5 + hit.score
+        score = len(title_matches) * 3.0 + len(content_matches) * 0.5 + hit.score
         if score > candidates.get(title, 0):
             candidates[title] = score
     if not candidates:
@@ -141,7 +223,7 @@ def hit_score_for_section_row(row, query_terms: list[str]) -> float:
     section_title = str(row["section_title"] or "")
     item_title = str(row["item_title"] or "")
     content = str(row["content"] or "")
-    score += len(matched_terms(section_title, query_terms)) * 2.0
+    score += len(matched_terms(section_title, query_terms)) * 3.0
     score += len(matched_terms(item_title, query_terms)) * 0.5
     score += len(matched_terms(content, query_terms)) * 0.25
     return score
@@ -155,6 +237,7 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
         table_instruction = """
 - 사용자가 표를 요청했으므로 반드시 Markdown 표로 답변합니다.
 - 표 컬럼은 `분야 | 예산 항목 | 지원 내용 | 금액 | 근거 파일명 | 근거 chunk`를 사용합니다.
+- 문서 근거의 candidate_id 한 줄은 세부 사업 1개입니다.
 - `근거 chunk`에는 `C1 / chunk 13`처럼 candidate_id와 chunk 번호를 함께 씁니다.
 - 문서 근거에 나온 candidate_id를 한 개도 빠뜨리지 않습니다.
 - 금액이 근거에 명확하지 않으면 `문서에서 확인 안 됨`이라고 씁니다.
@@ -195,20 +278,20 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
 {table_instruction}"""
 
 
-def append_missing_candidate_rows(answer: str, hits: list[SearchHit]) -> str:
+def append_missing_candidate_rows(answer: str, candidates: list[EvidenceCandidate]) -> str:
     missing_rows = []
-    for index, hit in enumerate(hits, start=1):
+    for index, candidate in enumerate(candidates, start=1):
         candidate_id = f"C{index}"
-        if candidate_id in answer:
+        if re.search(rf"\b{re.escape(candidate_id)}\b", answer):
             continue
-        amount = extract_first_amount(hit)
+        amount = extract_first_amount(candidate)
         missing_rows.append(
             "| {candidate_id} | {item_title} | {amount} | {file_name} | chunk {chunk_index} |".format(
                 candidate_id=candidate_id,
-                item_title=hit.chunk.item_title or "문서에서 확인 안 됨",
+                item_title=candidate.item_title or "문서에서 확인 안 됨",
                 amount=amount,
-                file_name=hit.chunk.path.name,
-                chunk_index=hit.chunk.index,
+                file_name=candidate.hit.chunk.path.name,
+                chunk_index=candidate.hit.chunk.index,
             )
         )
     if not missing_rows:
@@ -226,11 +309,16 @@ def append_missing_candidate_rows(answer: str, hits: list[SearchHit]) -> str:
     return "\n".join(lines)
 
 
-def extract_first_amount(hit: SearchHit) -> str:
-    amounts = hit.chunk.metadata.get("amounts") if hit.chunk.metadata else None
-    if amounts:
-        return f"+{amounts[0]}억원"
+def extract_first_amount(candidate: EvidenceCandidate) -> str:
+    if candidate.amounts:
+        return f"+{candidate.amounts[0]}억원"
     return "문서에서 확인 안 됨"
+
+
+def format_amounts(amounts: list[str]) -> str:
+    if not amounts:
+        return "문서에서 확인 안 됨"
+    return ", ".join(f"+{amount}억원" for amount in amounts)
 
 
 def wants_table(query: str) -> bool:
