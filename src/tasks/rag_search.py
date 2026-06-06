@@ -3,8 +3,9 @@ from __future__ import annotations
 from src.config import get_config
 from src.errors import AppError, ErrorCode
 from src.rag.chunker import build_chunks
-from src.rag.vector_store import extract_query_terms, lexical_search, matched_terms, semantic_search
+from src.rag.vector_store import SearchHit, extract_query_terms, lexical_search, matched_terms, row_to_text_chunk, semantic_search
 from src.schemas import TaskRequest
+from src.storage.sqlite_store import list_chunks_by_section
 from src.tasks.common import generate_korean_checked, success_result
 
 
@@ -32,7 +33,7 @@ def run(request: TaskRequest):
             hits = lexical_search(" ".join(request.query.split()[:3]), chunks, limit=8)
 
     query_terms = extract_query_terms(request.query)
-    hits = select_context_hits(hits, query_terms, limit=5)
+    hits = select_context_hits(hits, request.input_paths, query_terms, limit=12)
     context = "\n\n".join(
         format_context_hit(idx, hit, query_terms)
         for idx, hit in enumerate(hits, start=1)
@@ -53,6 +54,7 @@ def run(request: TaskRequest):
 
 {context}
 """
+    answer = append_missing_candidate_rows(answer, hits)
     if vector_error and search_mode == "lexical":
         answer = f"{answer}\n\n---\n\n참고: 벡터 검색을 사용할 수 없어 키워드 검색으로 대체했습니다. 원인: {vector_error}"
 
@@ -63,6 +65,10 @@ def run(request: TaskRequest):
             "score": hit.score,
             "search_mode": search_mode,
             "matched_terms": matched_terms(hit.chunk.content, query_terms),
+            "chunk_type": hit.chunk.chunk_type,
+            "section_title": hit.chunk.section_title,
+            "item_title": hit.chunk.item_title,
+            "page_number": hit.chunk.page_number,
         }
         for hit in hits
     ]
@@ -72,66 +78,35 @@ def run(request: TaskRequest):
 def format_context_hit(index: int, hit, query_terms: list[str]) -> str:
     terms = matched_terms(hit.chunk.content, query_terms)
     terms_text = ", ".join(terms) if terms else "직접 일치 없음"
-    excerpt = focused_excerpt(hit.chunk.content, query_terms)
+    excerpt = hit.chunk.content[:1200]
+    section_text = hit.chunk.section_title or "없음"
+    item_text = hit.chunk.item_title or "없음"
+    page_text = hit.chunk.page_number if hit.chunk.page_number is not None else ""
     return (
         f"[{index}] {hit.chunk.path.name} / chunk {hit.chunk.index}\n"
+        f"candidate_id: C{index}\n"
         f"근거 파일명(그대로 사용): {hit.chunk.path.name}\n"
+        f"chunk type: {hit.chunk.chunk_type}\n"
+        f"section: {section_text}\n"
+        f"item: {item_text}\n"
+        f"page: {page_text}\n"
         f"질문 키워드 일치: {terms_text}\n"
         f"{excerpt}"
     )
 
 
-def focused_excerpt(content: str, query_terms: list[str], *, max_chars: int = 1100) -> str:
-    cleaned = content.strip()
-    if len(cleaned) <= max_chars:
-        return cleaned
-    if not query_terms:
-        return cleaned[:max_chars].strip()
-
-    lowered = cleaned.lower()
-    positions = [lowered.find(term) for term in query_terms if lowered.find(term) >= 0]
-    if not positions:
-        return cleaned[:max_chars].strip()
-
-    first_match = min(positions)
-    start = max(0, first_match - 180)
-    page_marker = cleaned.rfind("[page", 0, first_match)
-    if page_marker >= 0 and first_match - page_marker <= 350:
-        start = page_marker
-    elif start > 0:
-        line_start = cleaned.rfind("\n", 0, start)
-        if line_start >= 0:
-            start = line_start + 1
-
-    end = min(len(cleaned), start + max_chars)
-    next_page_marker = cleaned.find("\n[page", first_match + 1)
-    if next_page_marker >= 0 and next_page_marker > start + 300:
-        end = min(end, next_page_marker)
-    excerpt = cleaned[start:end].strip()
-    if start > 0:
-        excerpt = "... " + excerpt
-    if end < len(cleaned):
-        excerpt += " ..."
-    return excerpt
-
-
-def select_context_hits(hits: list, query_terms: list[str], *, limit: int = 5) -> list:
+def select_context_hits(hits: list[SearchHit], input_paths, query_terms: list[str], *, limit: int = 8) -> list[SearchHit]:
     if not hits:
         return []
     if not query_terms:
         return hits[:limit]
 
-    section_hits = [hit for hit in hits if is_section_heading_hit(hit, query_terms)]
-    if section_hits:
-        selected = []
-        for section_hit in section_hits:
-            append_unique_hit(selected, section_hit)
-            for hit in hits:
-                if hit.chunk.path == section_hit.chunk.path and hit.chunk.index == section_hit.chunk.index + 1:
-                    append_unique_hit(selected, hit)
-        if len(selected) >= 2:
-            return selected[:limit]
-        return selected[:limit]
+    section_title = choose_section_title(hits, query_terms)
+    if section_title:
+        section_rows = list_chunks_by_section(input_paths, section_title)
+        section_hits = [SearchHit(chunk=row_to_text_chunk(row), score=hit_score_for_section_row(row, query_terms)) for row in section_rows]
+        if section_hits:
+            return section_hits[:limit]
 
     selected = [hit for hit in hits if matched_terms(hit.chunk.content, query_terms)]
     if len(selected) >= 3:
@@ -145,15 +120,31 @@ def select_context_hits(hits: list, query_terms: list[str], *, limit: int = 5) -
     return selected
 
 
-def append_unique_hit(selected: list, hit) -> None:
-    if all(existing.chunk.path != hit.chunk.path or existing.chunk.index != hit.chunk.index for existing in selected):
-        selected.append(hit)
+def choose_section_title(hits: list[SearchHit], query_terms: list[str]) -> str:
+    candidates: dict[str, float] = {}
+    for hit in hits:
+        title = hit.chunk.section_title
+        if not title:
+            continue
+        title_matches = matched_terms(title, query_terms)
+        content_matches = matched_terms(hit.chunk.content, query_terms)
+        score = len(title_matches) * 2.0 + len(content_matches) * 0.5 + hit.score
+        if score > candidates.get(title, 0):
+            candidates[title] = score
+    if not candidates:
+        return ""
+    return max(candidates, key=candidates.get)
 
 
-def is_section_heading_hit(hit, query_terms: list[str]) -> bool:
-    content = hit.chunk.content
-    terms = matched_terms(content, query_terms)
-    return "【" in content and "저출생" in terms and "미래세대" in terms
+def hit_score_for_section_row(row, query_terms: list[str]) -> float:
+    score = 1.0
+    section_title = str(row["section_title"] or "")
+    item_title = str(row["item_title"] or "")
+    content = str(row["content"] or "")
+    score += len(matched_terms(section_title, query_terms)) * 2.0
+    score += len(matched_terms(item_title, query_terms)) * 0.5
+    score += len(matched_terms(content, query_terms)) * 0.25
+    return score
 
 
 def build_rag_prompt(query: str, context: str, query_terms: list[str], source_file_names: list[str]) -> str:
@@ -164,6 +155,8 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
         table_instruction = """
 - 사용자가 표를 요청했으므로 반드시 Markdown 표로 답변합니다.
 - 표 컬럼은 `분야 | 예산 항목 | 지원 내용 | 금액 | 근거 파일명 | 근거 chunk`를 사용합니다.
+- `근거 chunk`에는 `C1 / chunk 13`처럼 candidate_id와 chunk 번호를 함께 씁니다.
+- 문서 근거에 나온 candidate_id를 한 개도 빠뜨리지 않습니다.
 - 금액이 근거에 명확하지 않으면 `문서에서 확인 안 됨`이라고 씁니다.
 - 금액은 해당 예산 항목과 같은 문장 또는 바로 이어지는 설명에 나온 수치만 사용합니다.
 - 사용자가 증액 금액을 요청하면 `억원(+158 )`처럼 괄호 안에 `+`로 표시된 금액만 씁니다. 이 경우 `+158억원`처럼 정리합니다.
@@ -200,6 +193,44 @@ def build_rag_prompt(query: str, context: str, query_terms: list[str], source_fi
 - 문서 근거에서 확인되지 않는 내용은 추측하지 말고 `문서에서 확인 안 됨`이라고 씁니다.
 - 여러 분야가 질문에 포함되어 있으면 분야별로 구분합니다.
 {table_instruction}"""
+
+
+def append_missing_candidate_rows(answer: str, hits: list[SearchHit]) -> str:
+    missing_rows = []
+    for index, hit in enumerate(hits, start=1):
+        candidate_id = f"C{index}"
+        if candidate_id in answer:
+            continue
+        amount = extract_first_amount(hit)
+        missing_rows.append(
+            "| {candidate_id} | {item_title} | {amount} | {file_name} | chunk {chunk_index} |".format(
+                candidate_id=candidate_id,
+                item_title=hit.chunk.item_title or "문서에서 확인 안 됨",
+                amount=amount,
+                file_name=hit.chunk.path.name,
+                chunk_index=hit.chunk.index,
+            )
+        )
+    if not missing_rows:
+        return answer
+
+    lines = [
+        answer.rstrip(),
+        "",
+        "## 누락 방지 후보",
+        "",
+        "| candidate_id | 예산 항목 | 증액 금액 | 근거 파일명 | 근거 chunk |",
+        "| --- | --- | --- | --- | --- |",
+        *missing_rows,
+    ]
+    return "\n".join(lines)
+
+
+def extract_first_amount(hit: SearchHit) -> str:
+    amounts = hit.chunk.metadata.get("amounts") if hit.chunk.metadata else None
+    if amounts:
+        return f"+{amounts[0]}억원"
+    return "문서에서 확인 안 됨"
 
 
 def wants_table(query: str) -> bool:

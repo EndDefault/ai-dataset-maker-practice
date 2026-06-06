@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass
@@ -95,11 +96,30 @@ def semantic_search(query: str, paths: list[Path], *, limit: int = 6) -> list[Se
         rerank_bonus = keyword_score(str(row["content"]), query_terms)
         hits.append(
             SearchHit(
-                chunk=TextChunk(path=Path(row["path"]), index=int(row["chunk_index"]), content=str(row["content"])),
+                chunk=row_to_text_chunk(row),
                 score=vector_score + rerank_bonus,
             )
         )
     return sorted(hits, key=lambda hit: hit.score, reverse=True)[:limit]
+
+
+def row_to_text_chunk(row) -> TextChunk:
+    metadata = {}
+    if "metadata_json" in row.keys() and row["metadata_json"]:
+        try:
+            metadata = json.loads(row["metadata_json"])
+        except json.JSONDecodeError:
+            metadata = {}
+    return TextChunk(
+        path=Path(row["path"]),
+        index=int(row["chunk_index"]),
+        content=str(row["content"]),
+        chunk_type=str(row["chunk_type"] or "text"),
+        section_title=str(row["section_title"] or ""),
+        item_title=str(row["item_title"] or ""),
+        page_number=int(row["page_number"]) if row["page_number"] is not None else None,
+        metadata=metadata,
+    )
 
 
 def extract_query_terms(query: str) -> list[str]:

@@ -19,12 +19,22 @@ DOCUMENT_COLUMN_UPGRADES = {
     "is_scanned_pdf": "is_scanned_pdf integer not null default 0",
     "error_message": "error_message text",
     "analyzed_at": "analyzed_at text",
+    "analysis_version": "analysis_version text not null default ''",
+}
+
+CHUNK_COLUMN_UPGRADES = {
+    "chunk_type": "chunk_type text not null default 'text'",
+    "section_title": "section_title text not null default ''",
+    "item_title": "item_title text not null default ''",
+    "page_number": "page_number integer",
+    "metadata_json": "metadata_json text",
 }
 
 EMBEDDING_COLUMN_UPGRADES = {
     "dimension": "dimension integer not null default 0",
 }
 
+DOCUMENT_ANALYSIS_VERSION = "v0.3.3-structured-chunks"
 VECTOR_TABLE_NAME = "chunk_embeddings"
 
 
@@ -85,7 +95,12 @@ def initialize_database() -> None:
               id integer primary key autoincrement,
               document_id integer,
               chunk_index integer not null,
+              chunk_type text not null default 'text',
+              section_title text not null default '',
+              item_title text not null default '',
+              page_number integer,
               content text not null,
+              metadata_json text,
               created_at text not null,
               foreign key(document_id) references documents(id)
             );
@@ -120,8 +135,10 @@ def initialize_database() -> None:
             """
         )
         _upgrade_documents_table(db)
+        _upgrade_chunks_table(db)
         _upgrade_embeddings_table(db)
         db.execute("create index if not exists idx_chunks_document_id on chunks(document_id)")
+        db.execute("create index if not exists idx_chunks_section_title on chunks(section_title)")
         db.execute("create index if not exists idx_embeddings_chunk_model on embeddings(chunk_id, model)")
 
     try:
@@ -135,6 +152,13 @@ def _upgrade_documents_table(db: sqlite3.Connection) -> None:
     for name, definition in DOCUMENT_COLUMN_UPGRADES.items():
         if name not in existing_columns:
             db.execute(f"alter table documents add column {definition}")
+
+
+def _upgrade_chunks_table(db: sqlite3.Connection) -> None:
+    existing_columns = {row["name"] for row in db.execute("pragma table_info(chunks)")}
+    for name, definition in CHUNK_COLUMN_UPGRADES.items():
+        if name not in existing_columns:
+            db.execute(f"alter table chunks add column {definition}")
 
 
 def _upgrade_embeddings_table(db: sqlite3.Connection) -> None:
@@ -234,9 +258,10 @@ def upsert_document(path: Path) -> None:
               error_message,
               analyzed_at,
               modified_at,
+              analysis_version,
               created_at
             )
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             on conflict(path) do update set
               name = excluded.name,
               file_type = excluded.file_type,
@@ -249,7 +274,8 @@ def upsert_document(path: Path) -> None:
               is_scanned_pdf = excluded.is_scanned_pdf,
               error_message = excluded.error_message,
               analyzed_at = excluded.analyzed_at,
-              modified_at = excluded.modified_at
+              modified_at = excluded.modified_at,
+              analysis_version = excluded.analysis_version
             """,
             (
                 str(path),
@@ -265,6 +291,7 @@ def upsert_document(path: Path) -> None:
                 analysis.error_message,
                 now,
                 modified_at,
+                DOCUMENT_ANALYSIS_VERSION,
                 now,
             ),
         )
@@ -280,10 +307,11 @@ def _document_analysis_is_current(document: sqlite3.Row | None, size: int, modif
         int(document["size"] or 0) == size
         and document["modified_at"] == modified_at
         and bool(document["analyzed_at"])
+        and document["analysis_version"] == DOCUMENT_ANALYSIS_VERSION
     )
 
 
-def _replace_document_chunks(db: sqlite3.Connection, document_id: int, chunks: list[str]) -> None:
+def _replace_document_chunks(db: sqlite3.Connection, document_id: int, chunks: list) -> None:
     chunk_rows = list(db.execute("select id from chunks where document_id = ?", (document_id,)))
     chunk_ids = [row["id"] for row in chunk_rows]
     if chunk_ids:
@@ -293,8 +321,34 @@ def _replace_document_chunks(db: sqlite3.Connection, document_id: int, chunks: l
     db.execute("delete from chunks where document_id = ?", (document_id,))
     now = datetime.now().isoformat(timespec="seconds")
     db.executemany(
-        "insert into chunks (document_id, chunk_index, content, created_at) values (?, ?, ?, ?)",
-        [(document_id, index, content, now) for index, content in enumerate(chunks, start=1)],
+        """
+        insert into chunks (
+          document_id,
+          chunk_index,
+          chunk_type,
+          section_title,
+          item_title,
+          page_number,
+          content,
+          metadata_json,
+          created_at
+        )
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                document_id,
+                index,
+                chunk.chunk_type,
+                chunk.section_title,
+                chunk.item_title,
+                chunk.page_number,
+                chunk.content,
+                json.dumps(chunk.metadata or {}, ensure_ascii=False),
+                now,
+            )
+            for index, chunk in enumerate(chunks, start=1)
+        ],
     )
 
 
@@ -353,7 +407,12 @@ def list_chunks_for_paths(paths: list[Path]) -> list[sqlite3.Row]:
                   c.id,
                   c.document_id,
                   c.chunk_index,
+                  c.chunk_type,
+                  c.section_title,
+                  c.item_title,
+                  c.page_number,
                   c.content,
+                  c.metadata_json,
                   d.path,
                   d.name
                 from chunks c
@@ -362,6 +421,46 @@ def list_chunks_for_paths(paths: list[Path]) -> list[sqlite3.Row]:
                 order by d.path, c.chunk_index
                 """,
                 [str(path) for path in file_paths],
+            )
+        )
+
+
+def list_chunks_by_section(paths: list[Path], section_title: str) -> list[sqlite3.Row]:
+    initialize_database()
+
+    from src.rag.chunker import collect_text_files
+
+    file_paths = collect_text_files(paths)
+    for file_path in file_paths:
+        upsert_document(file_path)
+
+    if not file_paths or not section_title:
+        return []
+
+    placeholders = ",".join("?" for _ in file_paths)
+    with connect() as db:
+        return list(
+            db.execute(
+                f"""
+                select
+                  c.id,
+                  c.document_id,
+                  c.chunk_index,
+                  c.chunk_type,
+                  c.section_title,
+                  c.item_title,
+                  c.page_number,
+                  c.content,
+                  c.metadata_json,
+                  d.path,
+                  d.name
+                from chunks c
+                join documents d on d.id = c.document_id
+                where d.path in ({placeholders})
+                  and c.section_title = ?
+                order by d.path, c.chunk_index
+                """,
+                [*[str(path) for path in file_paths], section_title],
             )
         )
 
@@ -460,7 +559,12 @@ def search_chunk_embeddings(
                   c.id,
                   c.document_id,
                   c.chunk_index,
+                  c.chunk_type,
+                  c.section_title,
+                  c.item_title,
+                  c.page_number,
                   c.content,
+                  c.metadata_json,
                   d.path,
                   d.name,
                   v.distance

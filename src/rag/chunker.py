@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.config import get_config
@@ -30,6 +31,21 @@ class TextChunk:
     path: Path
     index: int
     content: str
+    chunk_type: str = "text"
+    section_title: str = ""
+    item_title: str = ""
+    page_number: int | None = None
+    metadata: dict = field(default_factory=dict)
+
+
+@dataclass
+class ChunkRecord:
+    content: str
+    chunk_type: str = "text"
+    section_title: str = ""
+    item_title: str = ""
+    page_number: int | None = None
+    metadata: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -50,7 +66,7 @@ class DocumentAnalysis:
     text_extractable: bool
     is_scanned_pdf: bool
     error_message: str
-    chunks: list[str]
+    chunks: list[ChunkRecord]
 
 
 def resolve_input_paths(paths: list[Path]) -> list[Path]:
@@ -156,7 +172,7 @@ def analyze_document_file(path: Path) -> DocumentAnalysis:
             content = read_text_file(path)
 
         extracted_char_count = len(content.strip())
-        chunks = chunk_text(content)
+        chunks = chunk_document_text(content)
         if is_scanned_pdf:
             status = DocumentStatus.SCANNED_PDF
             error_message = "텍스트를 추출할 수 없습니다. 스캔 이미지 PDF로 추정됩니다."
@@ -227,9 +243,153 @@ def chunk_text(content: str, *, max_chars: int = 1200, overlap: int = 150) -> li
     return [chunk for chunk in chunks if chunk]
 
 
+def chunk_document_text(content: str) -> list[ChunkRecord]:
+    structured_chunks = build_structured_chunks(content)
+    if structured_chunks:
+        return structured_chunks
+    return [ChunkRecord(content=chunk) for chunk in chunk_text(content)]
+
+
+def build_structured_chunks(content: str) -> list[ChunkRecord]:
+    lines = [line.strip() for line in content.replace("\r\n", "\n").splitlines()]
+    chunks: list[ChunkRecord] = []
+    current_section = ""
+    current_page: int | None = None
+    current_item_lines: list[str] = []
+    current_item_page: int | None = None
+
+    def flush_item() -> None:
+        nonlocal current_item_lines, current_item_page
+        if not current_section or not current_item_lines:
+            current_item_lines = []
+            current_item_page = None
+            return
+
+        item_text = normalize_inline_text(" ".join(current_item_lines))
+        for candidate_text in split_item_candidates(item_text):
+            title = infer_item_title(candidate_text)
+            content = "\n".join(
+                [
+                    f"section: {current_section}",
+                    f"item: {title}",
+                    f"page: {current_item_page or ''}",
+                    candidate_text,
+                ]
+            ).strip()
+            chunks.append(
+                ChunkRecord(
+                    content=content,
+                    chunk_type="item",
+                    section_title=current_section,
+                    item_title=title,
+                    page_number=current_item_page,
+                    metadata={"amounts": extract_amounts(candidate_text)},
+                )
+            )
+        current_item_lines = []
+        current_item_page = None
+
+    for line in lines:
+        if not line:
+            continue
+
+        page_match = re.match(r"\[page\s+(\d+)\]", line, flags=re.IGNORECASE)
+        if page_match:
+            current_page = int(page_match.group(1))
+            continue
+
+        if is_page_or_major_heading(line):
+            flush_item()
+            current_section = ""
+            continue
+
+        section_title = detect_section_title(line)
+        if section_title:
+            flush_item()
+            current_section = section_title
+            continue
+
+        if not current_section:
+            continue
+
+        if is_item_start(line):
+            flush_item()
+            current_item_lines = [line]
+            current_item_page = current_page
+        elif current_item_lines:
+            current_item_lines.append(line)
+
+    flush_item()
+    return chunks
+
+
+def detect_section_title(line: str) -> str:
+    if "【" not in line or "】" not in line:
+        return ""
+    title = line.split("【", 1)[0]
+    title = re.sub(r"^[0-9ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ.\-\s]+", "", title)
+    title = title.replace("·", " ")
+    title = normalize_inline_text(title)
+    return title
+
+
+def is_item_start(line: str) -> bool:
+    stripped = line.lstrip()
+    return stripped.startswith("ㅇ") or stripped.startswith("-")
+
+
+def is_page_or_major_heading(line: str) -> bool:
+    stripped = line.strip()
+    if re.match(r"^-\s*\d+\s*-\s*$", stripped):
+        return True
+    return bool(re.match(r"^-\s*\d+\s*-\s*\d+\s+", stripped))
+
+
+def normalize_inline_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def split_item_candidates(text: str) -> list[str]:
+    if len(extract_amounts(text)) <= 1:
+        if "하고, 특별" in text:
+            parts = re.split(r"\s*하고,\s*", text, maxsplit=1)
+            candidates = [part.strip() for part in parts if part.strip()]
+            if len(candidates) == 2:
+                return candidates
+        return [text]
+
+    parts = re.split(r"(?<=\))\s*(?:하고,|하며,|하고|,)\s*", text)
+    candidates = [part.strip() for part in parts if part.strip()]
+    return candidates or [text]
+
+
+def extract_amounts(text: str) -> list[str]:
+    return [match.group(1).strip() for match in re.finditer(r"\(\s*\+([0-9.,]+)\s*\)", text)]
+
+
+def infer_item_title(text: str, *, max_chars: int = 48) -> str:
+    cleaned = re.sub(r"^[ㅇ\-\s()]+", "", text)
+    cleaned = re.split(r"억원\(\+|\(\+|하여|하고|으로|지원|지급", cleaned, maxsplit=1)[0]
+    cleaned = normalize_inline_text(cleaned).strip(" ,·")
+    if not cleaned:
+        cleaned = normalize_inline_text(text)
+    return cleaned[:max_chars]
+
+
 def build_chunks(paths: list[Path]) -> list[TextChunk]:
     chunks: list[TextChunk] = []
     for document in load_documents(paths):
-        for index, content in enumerate(chunk_text(document.content), start=1):
-            chunks.append(TextChunk(path=document.path, index=index, content=content))
+        for index, chunk in enumerate(chunk_document_text(document.content), start=1):
+            chunks.append(
+                TextChunk(
+                    path=document.path,
+                    index=index,
+                    content=chunk.content,
+                    chunk_type=chunk.chunk_type,
+                    section_title=chunk.section_title,
+                    item_title=chunk.item_title,
+                    page_number=chunk.page_number,
+                    metadata=chunk.metadata,
+                )
+            )
     return chunks
