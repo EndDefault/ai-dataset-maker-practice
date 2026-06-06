@@ -169,3 +169,25 @@
 - `sqlite-vec` 실제 벡터 검색 검증
 - `qwen3:4b` 기반 입출력 정제 AI 연결
 - OCR 또는 실제 RAG 연결 중 `v0.3.0` 우선순위 확정
+
+## 2026-06-06 v0.2.1 사용성 개선
+
+변경 내용:
+
+- 생성형 답변의 기본 system prompt를 한국어 작업 비서 기준으로 설정했다.
+- 요약, RAG 질의응답, 에러 분석 작업에서 `generate_korean()`을 사용하도록 바꿨다.
+- 긴 영어 응답으로 보이는 결과는 한국어 Markdown으로 한 번 재작성하는 fallback을 추가했다.
+- 파일 크기와 수정 시간이 바뀌지 않은 문서는 `upsert_document()`에서 재분석하지 않도록 했다.
+- Home과 Documents 페이지 렌더링 중 같은 PDF를 반복 분석하는 비용을 줄였다.
+
+검증:
+
+- `.venv\Scripts\python.exe -m compileall app.py src` 통과
+- 긴 영어 응답은 한국어 재작성 대상으로 감지되고, 한국어 응답은 재작성하지 않는지 확인
+- 같은 문서를 두 번 `upsert_document()`했을 때 `analyzed_at` 값이 유지되는지 확인
+
+남은 작업:
+
+- 실제 요약 실행에서 한국어 재작성 fallback이 필요한 빈도를 관찰한다.
+- 반복되는 입출력 패턴이 쌓이면 LoRA 학습 데이터로 활용할 수 있는 저장 구조를 검토한다.
+- `bge-m3` embedding 생성과 `sqlite-vec` 실제 검색 연결을 다음 후보로 유지한다.
