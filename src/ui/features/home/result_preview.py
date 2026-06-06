@@ -9,6 +9,14 @@ from src.ui.shared.messages import NO_RESULT
 
 def render_result_preview() -> None:
     st.markdown('<div class="section-label">결과 미리보기</div>', unsafe_allow_html=True)
+    if st.button("이전 결과/캐시 삭제", use_container_width=True):
+        st.session_state["last_result"] = None
+        st.session_state["last_command"] = ""
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.toast("이전 결과와 Streamlit 캐시를 삭제했습니다.")
+        st.rerun()
+
     result = st.session_state.get("last_result")
     if not result:
         st.info(NO_RESULT)
