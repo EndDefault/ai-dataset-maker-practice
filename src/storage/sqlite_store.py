@@ -161,13 +161,17 @@ def add_error(run_id: str, code: str, message: str, details: dict | None = None)
 
 def upsert_document(path: Path) -> None:
     initialize_database()
-    from src.rag.chunker import analyze_document_file
-
     stat = path.stat()
-    analysis = analyze_document_file(path)
     now = datetime.now().isoformat(timespec="seconds")
     modified_at = datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds")
     with connect() as db:
+        existing = db.execute("select * from documents where path = ?", (str(path),)).fetchone()
+        if _document_analysis_is_current(existing, stat.st_size, modified_at):
+            return
+
+        from src.rag.chunker import analyze_document_file
+
+        analysis = analyze_document_file(path)
         db.execute(
             """
             insert into documents (
@@ -221,6 +225,16 @@ def upsert_document(path: Path) -> None:
         document = db.execute("select id from documents where path = ?", (str(path),)).fetchone()
         if document:
             _replace_document_chunks(db, document["id"], analysis.chunks)
+
+
+def _document_analysis_is_current(document: sqlite3.Row | None, size: int, modified_at: str) -> bool:
+    if not document:
+        return False
+    return (
+        int(document["size"] or 0) == size
+        and document["modified_at"] == modified_at
+        and bool(document["analyzed_at"])
+    )
 
 
 def _replace_document_chunks(db: sqlite3.Connection, document_id: int, chunks: list[str]) -> None:
