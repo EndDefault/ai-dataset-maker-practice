@@ -23,6 +23,7 @@
 | `command_guide.md` | Windows cmd 기준 실행 명령어 |
 | `commit_convention.md` | 계속 사용할 커밋 규칙 |
 | `implementation_log.md` | 구현 기록 |
+| `version_plan.md` | v0.1.0 기준과 v0.2.0 이후 계획 |
 
 ## 갱신 규칙
 
