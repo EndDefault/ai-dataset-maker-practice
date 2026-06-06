@@ -29,7 +29,7 @@ def render_chunk_preview() -> None:
 
     chunks = build_chunks([selected_file])
     section_groups = group_chunks_by_section(chunks)
-    st.caption(f"총 {len(chunks)}개 item/text chunk · section package {len(section_groups)}개")
+    st.caption(f"총 {len(chunks)}개 item/text chunk · 섹션 묶음 {len(section_groups)}개")
     for group_index, (section_title, section_chunks) in enumerate(section_groups[:8], start=1):
         label = f"{section_title} · 후보 {len(section_chunks)}개"
         with st.expander(label, expanded=group_index == 1):

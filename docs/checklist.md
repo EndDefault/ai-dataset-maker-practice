@@ -171,6 +171,6 @@
 - [x] section 단위 chunk 검색 실험
 - [x] section chunk 기반 RAG 품질 저하 확인
 - [x] RAG/DB 검색 기준을 v0.3.3 item chunk 구조로 복원
-- [x] Documents chunk 미리보기에 section package 그룹 표시만 유지
+- [x] Documents chunk 미리보기에 섹션 묶음 표시만 유지
 - [ ] v0.3.3 기준 RAG 평가 질문 5~10개 작성
 - [ ] 여러 문서 기준 품질 평가표 작성

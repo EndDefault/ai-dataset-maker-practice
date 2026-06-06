@@ -339,13 +339,13 @@
 - 제외 조건이 있는 질문에서 제외 대상 섹션이 답변에 포함되는 품질 저하가 확인되었다.
 - 특정 예산안 PDF에 맞춘 규칙이 늘어나는 과적합 위험이 있어 검색 구조로는 채택하지 않는다.
 
-## 2026-06-06 v0.3.3 기준 복원과 section package 미리보기
+## 2026-06-06 v0.3.3 기준 복원과 섹션 묶음 미리보기
 
 변경 내용:
 
 - RAG/DB 검색 기준을 v0.3.3의 item chunk 구조로 복원했다.
 - `analysis_version`도 `v0.3.3-structured-chunks`로 되돌려 기존 문서가 item chunk 기준으로 재분석되게 했다.
-- v0.3.4에서 유효했던 section package 아이디어는 Documents chunk 미리보기에서만 유지한다.
+- v0.3.4에서 유효했던 섹션 묶음 아이디어는 Documents chunk 미리보기에서만 유지한다.
 - Documents 미리보기는 item chunk를 section별로 묶어 후보 항목 표로 보여준다.
 
 다음 기준:
