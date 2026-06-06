@@ -34,7 +34,7 @@ EMBEDDING_COLUMN_UPGRADES = {
     "dimension": "dimension integer not null default 0",
 }
 
-DOCUMENT_ANALYSIS_VERSION = "v0.3.4-section-group-chunks"
+DOCUMENT_ANALYSIS_VERSION = "v0.3.3-structured-chunks"
 VECTOR_TABLE_NAME = "chunk_embeddings"
 
 

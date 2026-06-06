@@ -257,7 +257,6 @@ def build_structured_chunks(content: str) -> list[ChunkRecord]:
     current_page: int | None = None
     current_item_lines: list[str] = []
     current_item_page: int | None = None
-    current_items: list[dict] = []
 
     def flush_item() -> None:
         nonlocal current_item_lines, current_item_page
@@ -269,39 +268,26 @@ def build_structured_chunks(content: str) -> list[ChunkRecord]:
         item_text = normalize_inline_text(" ".join(current_item_lines))
         for candidate_text in split_item_candidates(item_text):
             title = infer_item_title(candidate_text)
-            current_items.append(
-                {
-                    "title": title,
-                    "content": candidate_text,
-                    "amounts": extract_amounts(candidate_text),
-                    "page_number": current_item_page,
-                }
+            content = "\n".join(
+                [
+                    f"section: {current_section}",
+                    f"item: {title}",
+                    f"page: {current_item_page or ''}",
+                    candidate_text,
+                ]
+            ).strip()
+            chunks.append(
+                ChunkRecord(
+                    content=content,
+                    chunk_type="item",
+                    section_title=current_section,
+                    item_title=title,
+                    page_number=current_item_page,
+                    metadata={"amounts": extract_amounts(candidate_text)},
+                )
             )
         current_item_lines = []
         current_item_page = None
-
-    def flush_section() -> None:
-        nonlocal current_items, current_section
-        flush_item()
-        if not current_section or not current_items:
-            current_items = []
-            return
-
-        first_page = next((item.get("page_number") for item in current_items if item.get("page_number")), None)
-        amounts = [amount for item in current_items for amount in item.get("amounts", [])]
-        item_lines = [f"- {item['title']}: {item['content']}" for item in current_items]
-        chunk_content = "\n".join([f"section: {current_section}", "items:", *item_lines]).strip()
-        chunks.append(
-            ChunkRecord(
-                content=chunk_content,
-                chunk_type="section",
-                section_title=current_section,
-                item_title="",
-                page_number=first_page,
-                metadata={"items": current_items, "amounts": amounts},
-            )
-        )
-        current_items = []
 
     for line in lines:
         if not line:
@@ -313,13 +299,13 @@ def build_structured_chunks(content: str) -> list[ChunkRecord]:
             continue
 
         if is_page_or_major_heading(line):
-            flush_section()
+            flush_item()
             current_section = ""
             continue
 
         section_title = detect_section_title(line)
         if section_title:
-            flush_section()
+            flush_item()
             current_section = section_title
             continue
 
@@ -333,7 +319,7 @@ def build_structured_chunks(content: str) -> list[ChunkRecord]:
         elif current_item_lines:
             current_item_lines.append(line)
 
-    flush_section()
+    flush_item()
     return chunks
 
 
