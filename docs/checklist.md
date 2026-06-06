@@ -166,11 +166,11 @@
 - [x] v0.3.2 하드코딩 섹션 보정 코드 정리
 - [x] Home 이전 결과/캐시 삭제 버튼 추가
 
-## Phase 16. v0.3.4 섹션 그룹 청크
+## Phase 16. v0.3.4 섹션 그룹 청크 실험과 기준 복원
 
-- [x] 구조화 문서 chunk를 section 단위로 병합
-- [x] 세부 항목 후보를 `metadata_json.items`에 저장
-- [x] RAG 컨텍스트에서 section metadata 후보를 candidate_id 단위로 펼치기
-- [x] RAG 기본 근거 컨텍스트에서 page 노출 제거
-- [x] Documents chunk 미리보기에 section chunk와 후보 항목 표시
-- [x] analysis version 변경으로 기존 v0.3.3 문서 재분석
+- [x] section 단위 chunk 검색 실험
+- [x] section chunk 기반 RAG 품질 저하 확인
+- [x] RAG/DB 검색 기준을 v0.3.3 item chunk 구조로 복원
+- [x] Documents chunk 미리보기에 section package 그룹 표시만 유지
+- [ ] v0.3.3 기준 RAG 평가 질문 5~10개 작성
+- [ ] 여러 문서 기준 품질 평가표 작성

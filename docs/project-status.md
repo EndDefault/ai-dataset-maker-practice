@@ -15,13 +15,15 @@
 
 ## 현재 버전
 
-현재 구현 상태는 `v0.3.4`로 둔다.
+현재 구현 상태는 `v0.3.3` 기준 복원 상태로 둔다.
 
-`v0.3.4`는 구조화 청크를 섹션 단위로 합치고, RAG 답변 단계에서 섹션 안의 세부 후보를 다시 펼치는 버전이다.
+`v0.3.3`은 item chunk 기반 RAG와 candidate_id 누락 보강을 유지한다.
+
+`v0.3.4`의 section chunk 검색 실험은 제외 조건과 근거 세밀도에서 품질이 떨어져 현재 기준에서는 채택하지 않는다.
 
 `v0.3.0`은 `v0.3.0` 태그로 저장한다.
 
-다음 후보는 RAG 금액 추출 정확도 추가 관찰, `qwen3:4b` 기반 입출력 정제 AI 연결, OCR 지원이다.
+다음 후보는 v0.3.3 기준 품질 평가표 작성, RAG 금액 추출 정확도 추가 관찰, `qwen3:4b` 기반 입출력 정제 AI 연결, OCR 지원이다.
 
 ## 완료된 것
 
@@ -67,18 +69,19 @@
 - [x] 섹션 질문에서 해당 섹션 item chunk 전체를 컨텍스트로 사용
 - [x] candidate_id 기반 누락 후보 보강
 - [x] Home 결과 미리보기에 이전 결과와 Streamlit 캐시 삭제 버튼 추가
-- [x] 구조화 chunk를 section 단위로 병합
-- [x] section chunk metadata의 세부 후보를 RAG 근거 candidate로 펼침
-- [x] Documents chunk 미리보기에 section chunk와 후보 항목 표시
+- [x] v0.3.4 section chunk 검색 실험 결과를 보류
+- [x] RAG/DB 검색 기준을 v0.3.3 item chunk 구조로 복원
+- [x] Documents chunk 미리보기에서 section package 형태로 후보 항목 표시
 
 ## 진행 중
 
+- [ ] v0.3.3 기준 RAG 품질 평가표 작성
 - [ ] RAG 숫자 추출 후처리 검증 검토
 - [ ] `qwen3:4b` 기반 입출력 정제 AI 연결
 
 ## 다음 작업
 
-1. 실제 예산안 질의에서 section chunk 기반 RAG 응답 품질을 추가 관찰한다.
+1. v0.3.3 기준으로 RAG 질문 5~10개를 평가한다.
 2. `qwen3:4b` 기반 입출력 정제 AI 연결을 검토한다.
 3. OCR 지원 범위와 우선순위를 정한다.
 4. `v0.4.0` UI/UX 개편 후보를 정리한다.
