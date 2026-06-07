@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from html import escape
+
 import streamlit as st
 
-from src.config import get_config
 from src.storage.sqlite_store import initialize_database
 
 
@@ -22,41 +23,49 @@ def inject_css() -> None:
         """
         <style>
         .block-container {
-            padding-top: 1.25rem;
+            padding-top: 1rem;
             padding-bottom: 2rem;
         }
         [data-testid="stSidebar"] {
             border-right: 1px solid #e5e7eb;
         }
-        .app-title {
-            font-size: 1.55rem;
-            font-weight: 700;
-            margin-bottom: 0.15rem;
+        .page-title {
+            font-size: 1.45rem;
+            font-weight: 750;
+            margin: 0 0 0.1rem;
         }
-        .app-subtitle {
+        .page-subtitle {
             color: #64748b;
-            font-size: 0.93rem;
-            margin-bottom: 1.2rem;
+            font-size: 0.92rem;
+            margin: 0 0 1rem;
         }
         .section-label {
-            color: #475569;
-            font-size: 0.86rem;
-            font-weight: 650;
-            margin: 0.5rem 0 0.3rem;
-        }
-        .status-row {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.7rem;
-        }
-        .status-chip {
-            border: 1px solid #d7dde8;
-            border-radius: 999px;
-            padding: 0.18rem 0.58rem;
-            font-size: 0.78rem;
             color: #334155;
+            font-size: 0.86rem;
+            font-weight: 700;
+            margin: 0.15rem 0 0.5rem;
+        }
+        .file-row {
+            border: 1px solid #e2e8f0;
             background: #f8fafc;
+            padding: 0.55rem 0.65rem;
+            margin-bottom: 0.35rem;
+        }
+        .file-title {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .file-meta {
+            color: #64748b;
+            font-size: 0.78rem;
+            margin-top: 0.15rem;
+        }
+        .soft-note {
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.86rem;
         }
         </style>
         """,
@@ -65,20 +74,5 @@ def inject_css() -> None:
 
 
 def render_page_header(title: str, subtitle: str) -> None:
-    st.markdown(f'<div class="app-title">{title}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="app-subtitle">{subtitle}</div>', unsafe_allow_html=True)
-
-
-def render_runtime_chips() -> None:
-    config = get_config()
-    st.markdown(
-        f"""
-        <div class="status-row">
-          <span class="status-chip">main: {config.main_model}</span>
-          <span class="status-chip">cleaner: {config.cleaner_model}</span>
-          <span class="status-chip">embed: {config.embedding_model}</span>
-          <span class="status-chip">db: SQLite</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="page-title">{escape(title)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{escape(subtitle)}</div>', unsafe_allow_html=True)

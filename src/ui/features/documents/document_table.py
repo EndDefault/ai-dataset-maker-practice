@@ -23,41 +23,39 @@ def render_document_table() -> None:
         st.info("아직 업로드된 txt, md, pdf 문서가 없습니다.")
         return
 
-    header_name, header_status, header_metrics, header_modified, header_delete = st.columns([0.26, 0.15, 0.23, 0.18, 0.18])
-    header_name.caption("파일")
-    header_status.caption("상태")
-    header_metrics.caption("처리 정보")
-    header_modified.caption("수정/분석 시간")
-    header_delete.caption("관리")
-
+    rows = []
     for file_path in files:
         stat = file_path.stat()
         row = document_rows.get(str(file_path))
-        col_name, col_status, col_metrics, col_modified, col_delete = st.columns([0.26, 0.15, 0.23, 0.18, 0.18])
-        with col_name:
-            st.write(file_path.name)
-            st.caption(f"{file_path.suffix.lower().lstrip('.') or 'unknown'} · {stat.st_size:,} bytes")
-        with col_status:
-            st.write(document_status_label(row["status"] if row else None))
-            if row and row["error_message"]:
-                st.caption(row["error_message"])
-        with col_metrics:
-            page_count = row["page_count"] if row and row["page_count"] is not None else "-"
-            extracted_chars = int(row["extracted_char_count"] or 0) if row else 0
-            chunk_count = int(row["chunk_count"] or 0) if row else 0
-            if row and row["file_type"] == "pdf":
-                st.write(f"PDF {page_count}p")
-            else:
-                st.write("텍스트 문서")
-            st.caption(f"{extracted_chars:,}자 · {chunk_count:,} chunks")
-        with col_modified:
-            st.write(datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"))
-            if row and row["analyzed_at"]:
-                st.caption(f"분석 {row['analyzed_at'].replace('T', ' ')}")
-        with col_delete:
-            if st.button("삭제", key=f"delete_doc_{file_path.name}", use_container_width=True):
-                remove_document_file(file_path)
-                st.rerun()
+        page_count = row["page_count"] if row and row["page_count"] is not None else "-"
+        extracted_chars = int(row["extracted_char_count"] or 0) if row else 0
+        chunk_count = int(row["chunk_count"] or 0) if row else 0
+        rows.append(
+            {
+                "파일": file_path.name,
+                "형식": file_path.suffix.lower().lstrip(".") or "unknown",
+                "크기": f"{stat.st_size:,} bytes",
+                "상태": document_status_label(row["status"] if row else None),
+                "PDF": page_count,
+                "글자 수": extracted_chars,
+                "Chunks": chunk_count,
+                "수정 시간": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "분석 시간": row["analyzed_at"].replace("T", " ") if row and row["analyzed_at"] else "-",
+                "오류": row["error_message"] if row and row["error_message"] else "",
+            }
+        )
+
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+    with st.expander("문서 삭제", expanded=False):
+        st.warning("삭제하면 uploads 파일과 SQLite 문서/chunk/embedding 기록이 함께 정리됩니다.")
+        file_by_name = {file_path.name: file_path for file_path in files}
+        selected_name = st.selectbox("삭제할 문서", list(file_by_name.keys()), key="delete_document_name")
+        confirm = st.checkbox(f"{selected_name} 삭제 확인", key=f"delete_document_confirm_{selected_name}")
+        if st.button("선택 문서 삭제", use_container_width=True, disabled=not confirm):
+            remove_document_file(file_by_name[selected_name])
+            st.toast("문서를 삭제했습니다.")
+            st.rerun()
 
 
 def remove_document_file(file_path: Path) -> None:

@@ -1,45 +1,69 @@
-# Local AI Task Assistant
+# ai-dataset-maker-practice
 
-클라우드 API 비용 부담 없이 로컬 환경에서 동작하는 작업 수행형 AI 비서다.
+로컬 LLM과 RAG 구조를 연습하기 위한 프로젝트다.
 
-사용자가 자연어로 명령을 입력하면 AI 비서가 명령 의도를 파악하고, 문서 요약, 파일 검색, 코드 오류 분석 같은 반복 작업을 수행한 뒤 결과를 보기 쉬운 Markdown 형태로 제공한다.
+완성형 서비스나 고성능 RAG 제품을 목표로 하기보다, **AI를 활용해 로컬 문서 질의응답 앱을 만들고, 실행하고, 평가하고, 한계를 기록하는 과정**을 익히는 데 목적을 둔다.
 
-## 현재 단계
+## 현재 상태
 
-이 저장소는 docs-first 방식으로 진행한다.
+1차 구현은 여기서 마무리한다.
 
-현재 구현 상태는 `v0.2.1`이다.
+현재 앱은 Streamlit 기반 로컬 작업 콘솔로 동작한다. 사용자는 txt/md/pdf 파일을 업로드하고, 문서를 chunk로 나눈 뒤, 로컬 Ollama 모델을 사용해 문서 기반 질문을 실행할 수 있다.
 
-`v0.2.1`은 Streamlit 기반 로컬 작업 콘솔에 문서 처리 상태 확인, 한국어 출력 안정화, 변경 없는 문서 재분석 생략을 추가한 버전이다.
+현재 기준에서 되는 것:
 
-현재 지원 기능:
+- txt/md/pdf 파일 업로드
+- PDF 텍스트 추출 가능 여부 확인
+- 문서 chunk 생성
+- chunk를 SQLite에 저장
+- `bge-m3`로 문서 chunk와 질문 embedding 생성
+- `sqlite-vec` 기반 벡터 검색
+- 벡터 검색 실패 시 lexical fallback 검색
+- `qwen3:14b`로 RAG 답변 생성
+- Markdown 결과와 실행 기록 저장
+- RAG 평가 스크립트 실행
 
-- txt/md/pdf 문서 요약
-- txt/md/pdf 문서 검색
-- 에러 메시지 분석
-- RAG 기반 문서 질의응답 후보 기능
-- 문서별 인덱싱 상태, PDF 페이지 수, 추출 글자 수, chunk 수 표시
-- 영어 응답으로 보이는 생성형 답변의 한국어 재작성 fallback
+현재 기준에서 아직 부족한 것:
 
-## 현재 합의된 로컬 기준
+- 스캔 PDF OCR
+- PDF/표/복잡한 문서 파싱 품질
+- RAG 답변의 의미적 정확도 보장
+- 깊은 평가 기준
+- `qwen3:4b` 기반 입력 정제 AI 연결
+- 정교한 UI/UX 설계
 
-- GPU 기준: RTX 5060 Ti 16GB
-- 메인 응답 모델: `qwen3:14b`
-- 입출력 정제 모델: `qwen3:4b`
-- 임베딩 모델: `bge-m3`
-- DB: SQLite
-- 벡터 검색 후보: `sqlite-vec`
-- Python 실행: 프로젝트 가상환경 `.venv`
+즉, 이 프로젝트는 **RAG가 완성됐다**기보다 **RAG를 테스트하고 개선할 수 있는 기본 구조를 만들었다**고 보는 것이 맞다.
 
-## 중요한 개발 규칙
+## 기술 구성
 
-이 프로젝트의 명령어와 문서는 **Windows cmd 기준**으로 작성한다.
+| 영역 | 사용 기술 |
+| --- | --- |
+| UI | Streamlit |
+| 로컬 LLM | Ollama |
+| 답변 생성 모델 | `qwen3:14b` |
+| 입력 정제 후보 모델 | `qwen3:4b` |
+| 임베딩 모델 | `bge-m3` |
+| DB | SQLite |
+| 벡터 검색 | `sqlite-vec` |
+| 결과 저장 | Markdown, SQLite |
+| 평가 | `evals/rag/run_eval.py` |
 
-PowerShell 전용 명령어를 기본 실행 방법으로 쓰지 않는다.
+## RAG 흐름
 
-## 문서
+```txt
+문서 업로드
+→ 텍스트 추출
+→ chunk 생성
+→ bge-m3 embedding 생성
+→ SQLite / sqlite-vec 저장
+→ 질문 입력
+→ 질문 embedding 생성
+→ 관련 chunk 검색
+→ qwen3:14b에 근거와 질문 전달
+→ Markdown 답변 생성
+```
 
-시작점은 [docs/index.md](docs/index.md)다.
+중요한 점은 이 프로젝트가 모델을 새로 학습시키는 `train` 방식이 아니라는 것이다. 문서를 모델에 학습시키는 대신, 질문할 때 관련 문서 조각을 찾아서 모델에 함께 넣는 RAG 방식이다.
 
 ## 실행 방법
 
@@ -56,23 +80,41 @@ streamlit run app.py
 http://127.0.0.1:8501
 ```
 
-현재 사이트는 Streamlit 작업 콘솔이다.
+## 평가 실행
 
-- Home: 자연어 명령 실행과 Markdown 결과 미리보기
-- Documents: txt/md/pdf 업로드, 문서 상태, PDF 페이지 수, 추출 글자 수, chunk 수, chunk 미리보기
-- Runs: 실행 기록, Markdown 산출물, error.json 확인
-- Settings: Ollama 모델, SQLite DB, 경로 상태 확인
+RAG 기본 동작 점검:
 
-## 현재 RAG 상태
-
-현재 RAG 질의응답은 문서를 chunk로 나눈 뒤 lexical fallback 검색을 사용한다.
-
-`bge-m3` embedding과 `sqlite-vec` 실제 벡터 검색 연결은 다음 단계인 `v0.3.0` 후보로 둔다.
-
-질문은 문서 안에 직접 나올 법한 키워드를 포함하면 더 잘 동작한다.
-
-예시:
-
-```txt
-2026년 예산안 자료를 기준으로 저출생, 보육, 청년 지원과 관련된 예산 항목을 찾아서 항목별 지원 내용과 금액을 표로 정리해줘. 근거가 된 파일명도 함께 표시해줘.
+```cmd
+.venv\Scripts\python.exe evals\rag\run_eval.py --dry-run
+.venv\Scripts\python.exe evals\rag\run_eval.py
 ```
+
+현재 평가 스크립트는 성능을 깊게 보장하는 용도가 아니라, RAG 실행 흐름이 깨지지 않았는지 확인하는 기준선이다.
+
+마지막 확인 기준으로는 5개 평가 케이스가 모두 통과했다. 다만 이는 “기본 실행과 얕은 검증이 통과했다”는 의미이며, 답변 품질 자체는 별도 검토가 필요하다.
+
+## 문서
+
+시작점은 [docs/index.md](docs/index.md)다.
+
+핵심 문서:
+
+- [docs/project-status.md](docs/project-status.md): 현재 상태와 1차 종료 기준
+- [docs/ai-collaboration.md](docs/ai-collaboration.md): AI 활용 방식과 배운 점
+- [docs/architecture.md](docs/architecture.md): 전체 구조와 RAG/DB 흐름
+- [docs/command_guide.md](docs/command_guide.md): 실행 명령어
+- [evals/rag/README.md](evals/rag/README.md): RAG 평가 스크립트 설명
+
+## 이 프로젝트의 의미
+
+이 프로젝트는 “AI가 대신 만들어준 결과물”이라기보다, AI를 활용해 개발 과정을 나누고 검토한 연습 기록이다.
+
+특히 다음을 확인했다.
+
+- AI에게 막연히 요청하면 불필요한 결과가 섞인다.
+- UI는 기능보다 먼저 정보 우선순위와 규격이 필요하다.
+- RAG는 모델 성능보다 문서 파싱, chunk 품질, 검색 품질이 먼저 흔들린다.
+- 자동 평가는 완성도 보장이 아니라 문제를 발견하기 위한 기준선이다.
+- AI를 잘 쓰려면 요구사항, 검토 기준, 삭제할 것까지 명확히 말해야 한다.
+
+1차 목표는 여기까지로 정리하고, 다음 단계에서는 문서 파싱 품질, 평가 기준, UI 설계 규칙을 더 치밀하게 다룬다.

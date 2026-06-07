@@ -10,6 +10,9 @@ outputs/*
 uploads/*
 !uploads/.gitkeep
 
+evals/rag/reports/*
+!evals/rag/reports/.gitkeep
+
 .env
 .env.*
 !.env.example

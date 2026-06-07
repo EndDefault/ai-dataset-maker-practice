@@ -16,7 +16,7 @@ def render_chunk_preview() -> None:
         st.info("chunk로 나눌 문서가 없습니다.")
         return
 
-    selected_name = st.selectbox("문서 선택", [file_path.name for file_path in files])
+    selected_name = st.selectbox("문서 선택", [file_path.name for file_path in files], key="chunk_preview_file")
     selected_file = next(file_path for file_path in files if file_path.name == selected_name)
     upsert_document(selected_file)
     document = get_document_by_path(selected_file)
@@ -30,6 +30,7 @@ def render_chunk_preview() -> None:
     chunks = build_chunks([selected_file])
     section_groups = group_chunks_by_section(chunks)
     st.caption(f"총 {len(chunks)}개 item/text chunk · 섹션 묶음 {len(section_groups)}개")
+
     for group_index, (section_title, section_chunks) in enumerate(section_groups[:8], start=1):
         label = f"{section_title} · 후보 {len(section_chunks)}개"
         with st.expander(label, expanded=group_index == 1):
@@ -61,9 +62,10 @@ def build_candidate_rows(chunks: list[TextChunk]) -> list[dict]:
             {
                 "candidate_id": f"C{index}",
                 "chunk": chunk.index,
-                "예산 항목": chunk.item_title or "문서에서 확인 안 됨",
-                "증액 금액": amount_text,
-                "근거 내용": chunk.content[:260],
+                "page": chunk.page_number or "-",
+                "항목": chunk.item_title or "문서에서 확인 안 됨",
+                "금액": amount_text,
+                "근거 미리보기": chunk.content[:260],
             }
         )
     return rows

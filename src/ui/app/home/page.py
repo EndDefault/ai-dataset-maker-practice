@@ -6,18 +6,18 @@ from src.command_router import execute_command
 from src.normalization.io_cleaner import TASK_LABELS
 from src.ui.features.home.command_input import render_command_input
 from src.ui.features.home.result_preview import render_result_preview
-from src.ui.features.home.run_status import render_run_status
-from src.ui.shared.layout import render_page_header, render_runtime_chips
+from src.ui.shared.layout import render_page_header
 
 
 def render() -> None:
-    render_page_header("작업 콘솔", "자연어 명령을 작업 JSON으로 정리하고 결과를 Markdown으로 저장합니다.")
-    render_runtime_chips()
+    render_page_header(
+        "작업 콘솔",
+        "문서를 선택하고 명령을 실행한 뒤 결과를 확인합니다.",
+    )
 
-    left, right = st.columns([0.43, 0.57], gap="large")
+    left, right = st.columns([0.40, 0.60], gap="large")
     with left:
         submitted = render_command_input()
-        render_run_status()
 
     with right:
         if submitted:

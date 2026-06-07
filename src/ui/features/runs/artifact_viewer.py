@@ -17,11 +17,13 @@ def render_artifact_viewer(run_id: str) -> None:
 
     for artifact in artifacts:
         path = Path(artifact["path"])
-        with st.expander(f"{artifact['kind']} / {path.name}", expanded=artifact["kind"] == "markdown"):
+        is_markdown = artifact["kind"] == "markdown" or path.suffix == ".md"
+        with st.expander(f"{artifact['kind']} / {path.name}", expanded=is_markdown):
             st.caption(str(path))
-            if path.exists() and path.suffix == ".md":
-                st.markdown(strip_frontmatter(path.read_text(encoding="utf-8")))
-            elif path.exists():
-                st.code(path.read_text(encoding="utf-8"), language="json")
-            else:
+            if not path.exists():
                 st.warning("파일을 찾지 못했습니다.")
+                continue
+            if path.suffix == ".md":
+                st.markdown(strip_frontmatter(path.read_text(encoding="utf-8")))
+            else:
+                st.code(path.read_text(encoding="utf-8"), language="json")
