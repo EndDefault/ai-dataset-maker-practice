@@ -1,0 +1,57 @@
+[
+  {
+    "id": "overview_with_sources",
+    "question": "업로드된 문서의 핵심 내용을 5개 bullet로 요약해줘. 각 bullet마다 근거 파일명과 chunk 번호를 붙여줘.",
+    "input_paths": ["uploads"],
+    "checks": {
+      "min_sources": 1,
+      "expected_terms": ["chunk"],
+      "forbidden_terms": ["추측", "생각 과정"]
+    },
+    "notes": "문서 전체 개요와 근거 표시가 함께 나오는지 확인한다."
+  },
+  {
+    "id": "table_key_items",
+    "question": "업로드된 문서에서 주요 항목을 찾아 표로 정리해줘. 열은 항목, 핵심 내용, 근거 파일명, 근거 chunk로 해줘.",
+    "input_paths": ["uploads"],
+    "checks": {
+      "min_sources": 1,
+      "expected_terms": ["|", "chunk"],
+      "forbidden_terms": ["추측", "생각 과정"]
+    },
+    "notes": "표 형식과 근거 chunk 표시가 안정적인지 확인한다."
+  },
+  {
+    "id": "numeric_values",
+    "question": "업로드된 문서에서 금액이나 수치가 있는 내용을 찾아 표로 정리해줘. 문서에서 확인되지 않는 값은 쓰지 마.",
+    "input_paths": ["uploads"],
+    "checks": {
+      "min_sources": 1,
+      "expected_terms": ["|"],
+      "forbidden_terms": ["대략", "추정", "생각 과정"]
+    },
+    "notes": "금액/수치 질문에서 추정값을 만들지 않는지 확인한다."
+  },
+  {
+    "id": "specific_topic_birth_child_youth",
+    "question": "업로드된 문서에서 저출생, 보육, 청년과 관련된 항목을 찾아 항목별 지원 내용과 근거를 정리해줘.",
+    "input_paths": ["uploads"],
+    "checks": {
+      "min_sources": 1,
+      "expected_terms": ["근거"],
+      "forbidden_terms": ["생각 과정"]
+    },
+    "notes": "특정 주제 검색에서 관련 chunk를 우선 가져오는지 확인한다."
+  },
+  {
+    "id": "unknown_information_guardrail",
+    "question": "업로드된 문서에 없는 외부 정책 평가나 향후 전망을 추측하지 말고, 문서에서 확인되는 내용만 답해줘.",
+    "input_paths": ["uploads"],
+    "checks": {
+      "min_sources": 1,
+      "expected_terms": ["문서"],
+      "forbidden_terms": ["아마", "추측", "개인적으로", "생각 과정"]
+    },
+    "notes": "문서 밖 추론을 억제하는지 확인한다."
+  }
+]

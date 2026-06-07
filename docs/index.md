@@ -1,29 +1,42 @@
 # 문서 목록
 
-이 프로젝트는 docs-first 방식으로 진행한다. 지금은 기능을 확정하기보다 로컬 작업 비서의 기본 실행 구조를 먼저 정한다.
+이 프로젝트는 로컬 LLM과 RAG 구조를 연습하기 위한 docs-first 프로젝트다.
 
-목표는 단순 챗봇이 아니라, 실제 파일을 읽고 결과를 Markdown으로 저장하는 **로컬 작업 수행형 AI 비서**를 만드는 것이다.
+목표는 완성형 서비스가 아니라, **AI를 활용해 로컬 RAG 앱을 만들고, 실행 결과를 확인하고, 한계를 문서로 남기는 것**이다.
 
-## 현재 결정
+## 현재 정리
 
-- 초기 구현 기능은 아직 확정하지 않는다.
-- 초기 후보 기능은 txt/md/pdf 요약, 문서 검색, 에러 분석, RAG 질의응답이다.
-- RTX 5060 Ti 16GB 기준으로 `qwen3:14b`, `qwen3:4b`, `bge-m3`를 우선 사용한다.
-- DB는 SQLite를 기본으로 하고, 벡터 검색은 `sqlite-vec`를 우선 검토한다.
-- Python 패키지는 프로젝트 가상환경 `.venv`에 설치한다.
+- 1차 구현은 종료 상태로 둔다.
+- 현재 앱은 Streamlit 기반 로컬 작업 콘솔이다.
+- RAG는 `bge-m3` embedding, SQLite, `sqlite-vec`, `qwen3:14b`를 사용한다.
+- 평가 스크립트는 `evals/rag/`에 둔다.
+- `qwen3:4b` 기반 입력 정제 AI는 아직 실제 연결 전이다.
+- OCR, 깊은 평가, 정교한 UI/UX는 다음 단계 후보로 남긴다.
 
 ## 핵심 문서
 
 | 문서 | 용도 |
 | --- | --- |
-| `project-status.md` | 현재 상태와 다음 작업 요약 |
-| `requirements.md` | 요구사항, 기능 후보, 결정 대기 항목 |
+| `project-status.md` | 1차 종료 기준, 현재 상태, 다음 후보 작업 |
+| `ai-collaboration.md` | AI를 어떻게 활용했는지와 배운 점 |
+| `requirements.md` | 초기 요구사항, 기능 후보, 결정 대기 항목 |
 | `architecture.md` | 전체 구조, 모델 역할, RAG/DB 흐름 |
 | `checklist.md` | 단계별 작업 체크리스트 |
 | `command_guide.md` | Windows cmd 기준 실행 명령어 |
-| `commit_convention.md` | 계속 사용할 커밋 규칙 |
+| `commit_convention.md` | 커밋 규칙 |
 | `implementation_log.md` | 구현 기록 |
-| `version_plan.md` | v0.1.0 기준과 v0.2.0 이후 계획 |
+| `version_plan.md` | 버전 계획과 실험 기록 |
+| `../evals/rag/README.md` | RAG 평가 스크립트 설명 |
+
+## 현재 프로젝트를 읽는 순서
+
+1. `README.md`
+2. `docs/project-status.md`
+3. `docs/ai-collaboration.md`
+4. `docs/architecture.md`
+5. `evals/rag/README.md`
+
+코드보다 프로젝트 의도를 먼저 보려면 위 순서가 가장 낫다.
 
 ## 갱신 규칙
 
@@ -31,20 +44,18 @@
 - 구조가 바뀌면 `architecture.md`를 갱신한다.
 - 구현이 끝나면 `project-status.md`, `checklist.md`, `implementation_log.md`를 갱신한다.
 - 실행 명령이 바뀌면 `command_guide.md`를 갱신한다.
+- 평가 방식이 바뀌면 `evals/rag/README.md`와 `docs/project-status.md`를 함께 갱신한다.
 - 모든 명령어 예시는 Windows `cmd` 기준으로 작성한다.
 - PowerShell 전용 명령어를 기본 문서에 쓰지 않는다.
 
-## 확장 문서 규칙
+## 다음에 문서화할 후보
 
-처음부터 문서를 많이 만들지 않는다.
-
-기능이 커질 때만 새 문서를 추가한다.
-
-예시:
+아래 항목이 실제 작업으로 커질 때만 새 문서를 만든다.
 
 ```txt
-PDF 기능이 커지면 docs/pdf.md 추가
-OCR 기능이 커지면 docs/ocr.md 추가
-RAG 기능이 커지면 docs/rag.md 추가
-음성 기능이 커지면 docs/voice.md 추가
+PDF 파싱 품질 점검 → docs/pdf.md
+OCR 도입 검토 → docs/ocr.md
+RAG 평가 기준 강화 → docs/rag-evaluation.md
+UI 규칙 재설계 → docs/ui-guidelines.md
+Codex Skill 도입 → docs/codex-skill-notes.md
 ```
